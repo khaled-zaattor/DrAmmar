@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\ScheduleFollowUpEmails;
+use App\Mail\BookingConfirmationMail;
 use App\Mail\NewAppointmentBarberMail;
 use App\Models\Appointment;
 use App\Models\Service;
@@ -78,6 +79,11 @@ class AppointmentService
         if ($appointment->barber && $appointment->barber->email) {
             Mail::to($appointment->barber->email)
                 ->send(new NewAppointmentBarberMail($appointment));
+        }
+
+        if ($appointment->customer_email) {
+            Mail::to($appointment->customer_email)
+                ->send(new BookingConfirmationMail($appointment));
         }
 
         return $appointment;

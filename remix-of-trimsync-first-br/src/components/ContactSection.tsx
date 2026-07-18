@@ -87,6 +87,7 @@ const ContactSection = () => {
                 <p className="font-body text-muted-foreground text-sm">Pinellas Park, FL 33781</p>
                 <p className="font-body text-muted-foreground text-sm mt-1">
                   Proudly serving Pinellas Park, Lealman, and the greater St. Petersburg area.
+                  Our barbers speak both English and Arabic — أهلاً وسهلاً.
                 </p>
               </div>
             </div>

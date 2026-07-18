@@ -34,6 +34,9 @@ const ConfirmationScreen = ({
         <p className="font-body text-primary-foreground/60 mt-4">
           Your appointment has been confirmed. See you soon.
         </p>
+        <p className="font-body text-primary-foreground/40 text-sm mt-2">
+          A confirmation email has been sent to {booking.customer_email}.
+        </p>
 
         <div className="mt-10 border border-primary-foreground/10 p-6 text-left space-y-4">
           <div>
@@ -340,7 +343,11 @@ const BookingSection = forwardRef<BookingSectionHandle, {
       toast({ title: "Please enter your name", variant: "destructive" });
       return;
     }
-    if (contactEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim())) {
+    if (!contactEmail.trim()) {
+      toast({ title: "Please enter your email address", variant: "destructive" });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim())) {
       toast({ title: "Please enter a valid email address", variant: "destructive" });
       return;
     }
@@ -358,7 +365,7 @@ const BookingSection = forwardRef<BookingSectionHandle, {
       appointment_date: selectedDate!,
       appointment_time: selectedTime!,
       customer_name: contactName.trim(),
-      customer_email: contactEmail.trim() || "Client@gmail.com",
+      customer_email: contactEmail.trim(),
       customer_phone: contactPhone.trim(),
       notes: notes.trim() || undefined,
     });
@@ -405,23 +412,28 @@ const BookingSection = forwardRef<BookingSectionHandle, {
 
         {/* ── Step 1: Service Browser ── */}
         <div className="mt-12">
-          <label className="font-body text-primary-foreground/60 text-[0.975rem] uppercase tracking-widest">
+          <span className="block font-body text-primary-foreground/60 text-[0.975rem] uppercase tracking-widest">
             Services
-          </label>
+          </span>
 
           {/* Search bar */}
           <div className="relative mt-3">
+            <label htmlFor="service-search" className="sr-only">
+              Search services
+            </label>
             <Search
               size={15}
               className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-foreground/40 pointer-events-none"
               aria-hidden="true"
             />
             <input
+              id="service-search"
+              name="service-search"
               type="text"
+              autoComplete="off"
               placeholder="Search services…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Search services"
               className="w-full font-body text-sm py-3 pl-10 pr-4 bg-black/40 border border-primary-foreground/15 text-primary-foreground placeholder:text-primary-foreground/30 focus:border-accent focus:outline-none transition-colors rounded-lg"
             />
           </div>
@@ -611,9 +623,9 @@ const BookingSection = forwardRef<BookingSectionHandle, {
         {/* ── Step 2: Barber (filtered to those offering ALL selected services) ── */}
         {showBarberSection && selectedServices.length > 0 && (
           <div ref={barberRef} className="mt-10 animate-fade-in">
-            <label className="font-body text-primary-foreground/60 text-xs uppercase tracking-widest">
+            <span className="block font-body text-primary-foreground/60 text-xs uppercase tracking-widest">
               Barber
-            </label>
+            </span>
             {barbersLoading ? (
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -745,9 +757,9 @@ const BookingSection = forwardRef<BookingSectionHandle, {
         {/* ── Step 4: Time Slots ── */}
         {selectedDay && (
           <div ref={timeSlotsRef} className="mt-10 animate-fade-in">
-            <label className="font-body text-primary-foreground/60 text-xs uppercase tracking-widest">
+            <span className="block font-body text-primary-foreground/60 text-xs uppercase tracking-widest">
               Available Times
-            </label>
+            </span>
             {availabilityLoading ? (
               <div className="mt-3 grid grid-cols-3 md:grid-cols-5 gap-2">
                 {Array.from({ length: 10 }).map((_, i) => (
@@ -785,29 +797,59 @@ const BookingSection = forwardRef<BookingSectionHandle, {
         {/* ── Step 5: Contact details & confirm ── */}
         {allSelected && (
           <div ref={contactRef} className="mt-12 animate-fade-in">
-            <label className="font-body text-primary-foreground/60 text-xs uppercase tracking-widest">
+            <span
+              id="your-details-heading"
+              className="block font-body text-primary-foreground/60 text-xs uppercase tracking-widest"
+            >
               Your Details
-            </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                maxLength={100}
-                className={inputCls}
-              />
-              <input
-                type="email"
-                placeholder="Email Address (optional)"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-                maxLength={255}
-                className={inputCls}
-              />
+            </span>
+            <div
+              role="group"
+              aria-labelledby="your-details-heading"
+              className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3"
+            >
               <div>
+                <label htmlFor="booking-name" className="sr-only">
+                  Full Name
+                </label>
                 <input
+                  id="booking-name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  placeholder="Full Name"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  maxLength={100}
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label htmlFor="booking-email" className="sr-only">
+                  Email Address
+                </label>
+                <input
+                  id="booking-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Email Address"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  maxLength={255}
+                  required
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label htmlFor="booking-phone" className="sr-only">
+                  Phone Number
+                </label>
+                <input
+                  id="booking-phone"
+                  name="tel"
                   type="tel"
+                  autoComplete="tel"
                   inputMode="numeric"
                   pattern="[0-9+\-\s]+"
                   placeholder="Phone Number"
@@ -818,14 +860,21 @@ const BookingSection = forwardRef<BookingSectionHandle, {
                     setPhoneError(e.target.value !== cleaned ? "Phone number must contain numbers only" : "");
                   }}
                   maxLength={20}
+                  aria-invalid={phoneError ? true : undefined}
+                  aria-describedby={phoneError ? "booking-phone-error" : undefined}
                   className={inputCls}
                 />
                 {phoneError && (
-                  <p className="font-body text-red-400 text-xs mt-1">{phoneError}</p>
+                  <p id="booking-phone-error" className="font-body text-red-400 text-xs mt-1">{phoneError}</p>
                 )}
               </div>
             </div>
+            <label htmlFor="booking-notes" className="sr-only">
+              Notes (optional)
+            </label>
             <textarea
+              id="booking-notes"
+              name="notes"
               placeholder="Notes (optional)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

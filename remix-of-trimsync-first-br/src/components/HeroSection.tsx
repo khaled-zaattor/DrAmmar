@@ -18,7 +18,7 @@ const HeroSection = () => {
       <div className="absolute inset-0">
         <img
           src="/hero-barber.jpg"
-          alt="Premium barbershop haircut"
+          alt="Barber giving a precision fade at Ali's Barber Shop in Pinellas Park, FL"
           className="w-full h-full object-cover opacity-60"
           style={{ objectPosition: "left bottom" }}
           {...({ fetchpriority: "high" } as React.ImgHTMLAttributes<HTMLImageElement>)}
