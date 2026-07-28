@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class RebookingReminderMail extends Mailable
@@ -30,6 +31,15 @@ class RebookingReminderMail extends Mailable
             view: 'emails.rebooking_reminder',
             with: [
                 'appointment' => $this->appointment,
+            ],
+        );
+    }
+
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: [
+                'List-Unsubscribe' => '<mailto:' . config('mail.from.address') . '?subject=Unsubscribe>',
             ],
         );
     }

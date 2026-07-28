@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Queue\SerializesModels;
 
 class BookingConfirmationMail extends Mailable
@@ -28,8 +29,18 @@ class BookingConfirmationMail extends Mailable
     {
         return new Content(
             view: 'emails.booking_confirmation',
+            text: 'emails.booking_confirmation_text',
             with: [
                 'appointment' => $this->appointment,
+            ],
+        );
+    }
+
+    public function headers(): Headers
+    {
+        return new Headers(
+            text: [
+                'List-Unsubscribe' => '<mailto:' . config('mail.from.address') . '?subject=Unsubscribe>',
             ],
         );
     }

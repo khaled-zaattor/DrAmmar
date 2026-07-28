@@ -77,7 +77,8 @@
     </div>
 
     <div class="footer">
-        <p>{{ config('app.name') }} &mdash; Booking Confirmation</p>
+        <p><strong>{{ config('app.name') }}</strong> &mdash; Booking Confirmation</p>
+        <p>4201 62nd North Unit 9, Pinellas Park, FL 33781 &middot; 813-895-9229</p>
     </div>
 </body>
 </html>
