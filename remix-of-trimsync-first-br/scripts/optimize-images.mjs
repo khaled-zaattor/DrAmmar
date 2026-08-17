@@ -9,7 +9,7 @@
  */
 import sharp from 'sharp';
 import pngToIco from 'png-to-ico';
-import { readFile, writeFile, stat, mkdir, unlink } from 'node:fs/promises';
+import { writeFile, stat, mkdir, unlink } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -141,24 +141,27 @@ async function gallery() {
   }
 }
 
-// --- Social card: already WebP but heavy for its dimensions.
+// --- Social card: 1200×630 JPEG (Facebook/LinkedIn) plus a WebP sibling.
+// Cropped from the hero so the card matches the site, with exact dimensions
+// the crawlers expect. JPEG is the primary og:image — WebP cards fail in
+// iMessage, some Slack clients, and older Facebook scrapers.
 async function og() {
   console.log('\nSocial card');
-  const src = path.join(pub, 'og-image.webp');
-  // Read into memory first — writing back to the path sharp is reading from
-  // fails on Windows with an open-file lock.
-  const input = await readFile(src);
-  const before = input.length;
-  const output = await sharp(input).webp({ quality: 80, effort: 6 }).toBuffer();
-  if (output.length < before) {
-    await writeFile(src, output);
-    console.log(
-      `  ${'og-image.webp'.padEnd(34)} ${kb(before).padStart(10)} -> ${kb(output.length).padStart(10)}`
-    );
-    results.push({ label: 'og-image.webp', before, after: output.length });
-  } else {
-    console.log('  og-image.webp already optimal, left alone');
-  }
+  const src = path.join(assets, 'hero-barber.jpg');
+  const jpg = path.join(pub, 'og-image.jpg');
+  const webp = path.join(pub, 'og-image.webp');
+
+  await sharp(src)
+    .resize(1200, 630, { fit: 'cover', position: 'left bottom' })
+    .jpeg({ quality: 82, mozjpeg: true })
+    .toFile(jpg);
+  await report('og-image.jpg', src, jpg);
+
+  await sharp(src)
+    .resize(1200, 630, { fit: 'cover', position: 'left bottom' })
+    .webp({ quality: 78, effort: 6 })
+    .toFile(webp);
+  await report('og-image.webp', src, webp);
 }
 
 if (!existsSync(pub)) await mkdir(pub, { recursive: true });

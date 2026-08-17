@@ -61,11 +61,15 @@ const HeroSection = () => {
       <div className="relative z-10 section-padding pt-32 md:pt-40">
         <div className="max-w-[1400px] mx-auto">
           <p className="font-body text-accent text-sm uppercase tracking-widest text-right mb-4">
-            Premier Barbershop in Pinellas Park &amp; St. Petersburg, FL
+            Ali&apos;s Barber Shop · Pinellas Park &amp; St. Petersburg, FL
           </p>
           <h1 className="font-display text-primary-foreground text-6xl sm:text-8xl md:text-[10rem] lg:text-[12rem] leading-[0.85] tracking-tight uppercase text-right">
             The Art<br />of the<br />Cut
           </h1>
+          <p className="font-body text-primary-foreground/80 text-sm md:text-base mt-6 max-w-md ml-auto text-right leading-relaxed">
+            Men&apos;s haircuts, skin fades, taper fades, and beard trims.
+            English and Arabic spoken. Book online or call.
+          </p>
         </div>
       </div>
 

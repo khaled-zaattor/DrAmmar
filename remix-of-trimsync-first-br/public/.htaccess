@@ -5,11 +5,15 @@
   RewriteEngine On
   RewriteBase /
 
+  # Canonical host: www → apex. HTTPS is assumed (the host already terminates TLS).
+  RewriteCond %{HTTP_HOST} ^www\.alisbarbershop\.com$ [NC]
+  RewriteRule ^(.*)$ https://alisbarbershop.com/$1 [R=301,L]
+
   # /location used to be a client-side window.location.replace inside React,
   # which meant crawlers got a blank page carrying the homepage's canonical tag
   # and users waited for the JS bundle before being redirected. A real 301 is
   # both correct for SEO and instant.
-  RewriteRule ^location/?$ "https://www.google.com/maps/place/Ali's+Barbershop/@27.8286777,-82.6982536,16z/data=!4m10!1m2!2m1!1sAli's+Barbershop,+4201+62nd+North+Unit+9,+Pinellas+Park,+FL+33781!3m6!1s0x88c2e5e61c59b849:0xd1899ae87c607955!8m2!3d27.8288039!4d-82.6914737!16s%2Fg%2F11xkrdhb2h?hl=en-US" [R=301,L,NE]
+  RewriteRule ^location/?$ "https://www.google.com/maps?cid=15098769549046085973&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAMYASAF&hl=en&gl=US&source=embed" [R=301,L,NE]
 </IfModule>
 
 # ---------------------------------------------------------------------------
@@ -43,7 +47,7 @@
     Header set Cache-Control "public, max-age=604800"
   </FilesMatch>
 
-  <FilesMatch "^(index\.html|robots\.txt|sitemap\.xml|llms\.txt)$">
+  <FilesMatch "^(index\.html|404\.html|robots\.txt|sitemap\.xml|llms\.txt)$">
     Header set Cache-Control "public, max-age=0, must-revalidate"
   </FilesMatch>
 
@@ -55,12 +59,10 @@
 </IfModule>
 
 # ---------------------------------------------------------------------------
-# SPA fallback — every unknown path is served index.html so React Router can
-# handle it. Keep this last.
+# Real 404s. This site has one indexable URL (/). The old SPA catch-all served
+# index.html at HTTP 200 for every unknown path — a soft-404 that competed
+# with the homepage. Existing files (hashed assets, sitemap, robots, images)
+# are still served as files. Everything else is a genuine 404.
 # ---------------------------------------------------------------------------
-<IfModule mod_rewrite.c>
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
-</IfModule>
+ErrorDocument 404 /404.html
+

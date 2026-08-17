@@ -1,6 +1,17 @@
 import { MapPin, Phone, Clock, Mail } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api, type BusinessHours } from "@/lib/api";
+import {
+  ADDRESS_CITY,
+  ADDRESS_REGION,
+  ADDRESS_STREET,
+  ADDRESS_ZIP,
+  EMAIL,
+  HOURS_ROWS,
+  MAPS_URL,
+  PHONE_DISPLAY,
+  PHONE_TEL,
+} from "@/lib/business";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -77,14 +88,16 @@ const ContactSection = () => {
               <MapPin size={20} className="text-accent mt-1 shrink-0" />
               <div>
                 <a
-                  href="https://www.google.com/maps/place/Ali's+Barbershop/@27.8288039,-82.7676914,13z/data=!4m10!1m2!2m1!1sAli's+Barbershop,+4201+62nd+North+Unit+9,+Pinellas+Park,+FL+33781!3m6!1s0x88c2e5e61c59b849:0xd1899ae87c607955!8m2!3d27.8288039!4d-82.6914737!15sCkFBbGkncyBCYXJiZXJzaG9wLCA0MjAxIDYybmQgTm9ydGggVW5pdCA5LCBQaW5lbGxhcyBQYXJrLCBGTCAzMzc4MVpAIj5hbGkncyBiYXJiZXJzaG9wIDQyMDEgNjJuZCBub3J0aCB1bml0IDkgcGluZWxsYXMgcGFyayBmbCAzMzc4MZIBCmhhaXJfc2Fsb26aAURDaTlEUVVsUlFVTnZaRU5vZEhsalJqbHZUMnQzTVZwSFduRlNlazVUVlZaV05sUjZhRTFOYkd4eVRqSnJlVlJzUlJBQuABAPoBBAgAEDE!16s%2Fg%2F11xkrdhb2h?hl=en-US&entry=ttu&g_ep=EgoyMDI2MDUxMy4wIKXMDSoASAFQAw%3D%3D"
+                  href={MAPS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-body text-secondary-foreground font-medium hover:text-accent transition-colors"
                 >
-                  Ali's Barbershop, 4201 62nd North Unit 9
+                  Ali&apos;s Barbershop, {ADDRESS_STREET}
                 </a>
-                <p className="font-body text-muted-foreground text-sm">Pinellas Park, FL 33781</p>
+                <p className="font-body text-muted-foreground text-sm">
+                  {ADDRESS_CITY}, {ADDRESS_REGION} {ADDRESS_ZIP}
+                </p>
                 <p className="font-body text-muted-foreground text-sm mt-1">
                   Proudly serving Pinellas Park, Lealman, and the greater St. Petersburg area.
                   Our barbers speak both English and Arabic — أهلاً وسهلاً.
@@ -95,8 +108,8 @@ const ContactSection = () => {
             <div className="flex items-start gap-4">
               <Phone size={20} className="text-accent mt-1 shrink-0" />
               <div>
-                <a href="tel:8138959229" className="font-body text-secondary-foreground font-medium hover:text-accent transition-colors">
-                  813-895-9229
+                <a href={PHONE_TEL} className="font-body text-secondary-foreground font-medium hover:text-accent transition-colors">
+                  {PHONE_DISPLAY}
                 </a>
                 <p className="font-body text-muted-foreground text-sm">Call or text to book</p>
               </div>
@@ -125,12 +138,18 @@ const ContactSection = () => {
                     </p>
                   ))
                 ) : (
-                  // Fallback if API fails
-                  <>
-                    <p className="font-body text-secondary-foreground font-medium">Tue–Fri: 8:30 AM – 5:30 PM</p>
-                    <p className="font-body text-muted-foreground text-sm">Sat: 9:00 AM – 4:00 PM</p>
-                    <p className="font-body text-muted-foreground text-sm">Sun & Mon: Closed</p>
-                  </>
+                  HOURS_ROWS.map((row, i) => (
+                    <p
+                      key={row}
+                      className={`font-body text-sm ${
+                        i === 0
+                          ? "text-secondary-foreground font-medium"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {row}
+                    </p>
+                  ))
                 )}
               </div>
             </div>
@@ -138,8 +157,8 @@ const ContactSection = () => {
             <div className="flex items-start gap-4">
               <Mail size={20} className="text-accent mt-1 shrink-0" />
               <div>
-                <a href="mailto:alisbarbershop2026@gmail.com" className="font-body text-secondary-foreground font-medium hover:text-accent transition-colors">
-                  alisbarbershop2026@gmail.com
+                <a href={`mailto:${EMAIL}`} className="font-body text-secondary-foreground font-medium hover:text-accent transition-colors">
+                  {EMAIL}
                 </a>
                 <p className="font-body text-muted-foreground text-sm">Email us anytime</p>
               </div>
@@ -160,7 +179,7 @@ const ContactSection = () => {
           />
           </div>
           <a
-            href="https://www.google.com/maps/place/Ali's+Barbershop/@27.8288039,-82.7676914,13z/data=!4m10!1m2!2m1!1sAli's+Barbershop,+4201+62nd+North+Unit+9,+Pinellas+Park,+FL+33781!3m6!1s0x88c2e5e61c59b849:0xd1899ae87c607955!8m2!3d27.8288039!4d-82.6914737!15sCkFBbGkncyBCYXJiZXJzaG9wLCA0MjAxIDYybmQgTm9ydGggVW5pdCA5LCBQaW5lbGxhcyBQYXJrLCBGTCAzMzc4MVpAIj5hbGkncyBiYXJiZXJzaG9wIDQyMDEgNjJuZCBub3J0aCB1bml0IDkgcGluZWxsYXMgcGFyayBmbCAzMzc4MZIBCmhhaXJfc2Fsb26aAURDaTlEUVVsUlFVTnZaRU5vZEhsalJqbHZUMnQzTVZwSFduRlNlazVUVlZaV05sUjZhRTFOYkd4eVRqSnJlVlJzUlJBQuABAPoBBAgAEDE!16s%2Fg%2F11xkrdhb2h?hl=en-US&entry=ttu&g_ep=EgoyMDI2MDUxMy4wIKXMDSoASAFQAw%3D%3D"
+            href={MAPS_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="font-body text-accent text-sm font-medium hover:underline text-center"

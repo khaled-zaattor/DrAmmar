@@ -11,9 +11,9 @@ const SLOT_OPTIONS = [15, 20, 30, 40, 45, 60];
 const emptyBusinessHours = () =>
   DAYS.map((_, i) => ({
     day_of_week: i,
-    is_closed: i === 0,       // Sunday closed by default in UI
-    open_time: '08:30',
-    close_time: '17:30',
+    is_closed: false,
+    open_time: '09:00',
+    close_time: i === 0 ? '15:00' : i === 6 ? '19:00' : '21:00',
     slot_duration: 30,
   }));
 

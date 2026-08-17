@@ -22,7 +22,7 @@ class AppointmentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Appointment::with(['barber', 'service'])
-            ->withCount(['customerVisits as customer_visits_count'])
+            ->withCustomerVisitCount()
             ->orderBy('appointment_date', 'desc')
             ->orderBy('appointment_time', 'desc');
 
@@ -82,7 +82,7 @@ class AppointmentController extends Controller
         }
 
         $appointment->load(['barber', 'service', 'followUps']);
-        $appointment->loadCount(['customerVisits as customer_visits_count']);
+        $appointment->setAttribute('customer_visits_count', $appointment->countableVisitCount());
 
         return response()->json([
             'success' => true,
@@ -113,7 +113,7 @@ class AppointmentController extends Controller
         $appointment->update($data);
         $appointment->load(['barber', 'service']);
         // Status may have moved in or out of the countable set.
-        $appointment->loadCount(['customerVisits as customer_visits_count']);
+        $appointment->setAttribute('customer_visits_count', $appointment->countableVisitCount());
 
         return response()->json([
             'success' => true,

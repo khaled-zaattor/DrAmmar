@@ -49,6 +49,7 @@ const TestimonialsSection = () => {
           {doubled.map((t, i) => (
             <div
               key={i}
+              aria-hidden={i >= testimonials.length || undefined}
               className="w-[340px] shrink-0 bg-primary-foreground/10 border border-primary-foreground/15 p-8 flex flex-col justify-between"
             >
               <div>

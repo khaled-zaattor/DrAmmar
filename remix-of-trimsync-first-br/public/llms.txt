@@ -7,7 +7,7 @@ Ali's Barber Shop is a barbershop located in Pinellas Park, FL, serving Pinellas
 ## Business details
 
 - **Name:** Ali's Barber Shop
-- **Address:** 4201 62nd North, Unit 9, Pinellas Park, FL 33781, United States
+- **Address:** 4201 62nd Ave N, Unit 9, Pinellas Park, FL 33781, United States
 - **Phone:** +1-813-895-9229 (call or text to book)
 - **Email:** alisbarbershop2026@gmail.com
 - **Website:** https://alisbarbershop.com
@@ -17,9 +17,9 @@ Ali's Barber Shop is a barbershop located in Pinellas Park, FL, serving Pinellas
 
 ## Hours
 
-- Tuesday–Friday: 8:30 AM – 5:30 PM
-- Saturday: 9:00 AM – 4:00 PM
-- Sunday and Monday: Closed
+- Sunday: 9:00 AM – 3:00 PM
+- Monday–Friday: 9:00 AM – 9:00 PM
+- Saturday: 9:00 AM – 7:00 PM
 
 ## Services
 
@@ -27,10 +27,12 @@ Haircuts, skin fades, taper fades, line-ups and edge-ups, beard trims and beard 
 
 ## Pages
 
-- [Home](/): The full site — hero, booking, gallery, testimonials, and contact details.
+- [Home](/): The full site — hero, about, services, booking, gallery, testimonials, and contact details.
 
 ## Sections
 
+- [About](/#about): Who we are, hours, and the Pinellas Park shop.
+- [Services](/#services): Haircuts, fades, line-ups, beard trims, and more.
 - [Booking](/#booking): Online appointment booking — pick services, barber, date, and time.
 - [Gallery](/#gallery): Photos of recent cuts and the shop.
 - [Testimonials](/#testimonials): Reviews from clients.

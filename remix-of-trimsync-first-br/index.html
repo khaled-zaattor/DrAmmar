@@ -7,7 +7,8 @@
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <!-- Must match the <picture> srcset in HeroSection.tsx exactly, or the
+    <meta name="theme-color" content="#1a1a1a" />
+    <!-- Must match the <img> srcset in HeroSection.tsx exactly, or the
          browser preloads one candidate and then downloads another. -->
     <link rel="preload" as="image" type="image/webp"
           href="/hero-barber-1280.webp"
@@ -22,29 +23,29 @@
          --font-body in src/index.css). This drops two third-party origins from
          the critical path and removes the late font swap that was reflowing
          the hero after first paint. -->
-    <meta name="description" content="Barber shop in Pinellas Park, FL. Skin fades, taper fades, line-ups and beard trims by expert barbers. Book online today.">
+    <meta name="description" content="Barbershop in Pinellas Park, FL. Skin fades, taper fades, line-ups, and beard trims. English and Arabic spoken. Book online or call 813-895-9229.">
     <meta name="author" content="Ali's Barber Shop" />
+    <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://alisbarbershop.com/" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Ali's Barber Shop" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:url" content="https://alisbarbershop.com/" />
-    <meta property="og:image" content="https://alisbarbershop.com/og-image.webp">
-    <meta property="og:image:type" content="image/webp">
-    <meta property="og:image:width" content="484">
-    <meta property="og:image:height" content="254">
+    <meta property="og:title" content="Ali's Barber Shop | Best Fades &amp; Men's Grooming in Pinellas Park, FL">
+    <meta property="og:description" content="Barbershop in Pinellas Park, FL. Skin fades, taper fades, line-ups, and beard trims. English and Arabic spoken. Book online or call 813-895-9229.">
+    <meta property="og:image" content="https://alisbarbershop.com/og-image.jpg">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Ali's Barber Shop in Pinellas Park, Florida">
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@AlisBarberShop" />
-    <meta name="twitter:image" content="https://alisbarbershop.com/og-image.webp">
+    <meta name="twitter:title" content="Ali's Barber Shop | Best Fades &amp; Men's Grooming in Pinellas Park, FL">
+    <meta name="twitter:description" content="Barbershop in Pinellas Park, FL. Skin fades, taper fades, line-ups, and beard trims. English and Arabic spoken. Book online or call 813-895-9229.">
+    <meta name="twitter:image" content="https://alisbarbershop.com/og-image.jpg">
     <meta name="twitter:image:alt" content="Ali's Barber Shop in Pinellas Park, Florida">
 
-  <meta property="og:title" content="Ali's Barber Shop | Best Fades &amp; Men's Grooming in Pinellas Park, FL">
-  <meta name="twitter:title" content="Ali's Barber Shop | Best Fades &amp; Men's Grooming in Pinellas Park, FL">
-  <meta property="og:description" content="Barber shop in Pinellas Park, FL. Skin fades, taper fades, line-ups, and beard trims by expert barbers — English and Arabic spoken. Book your appointment online today.">
-  <meta name="twitter:description" content="Barber shop in Pinellas Park, FL. Skin fades, taper fades, line-ups, and beard trims by expert barbers — English and Arabic spoken. Book your appointment online today.">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -52,13 +53,16 @@
     "@id": "https://alisbarbershop.com/#barbershop",
     "name": "Ali's Barber Shop",
     "alternateName": "صالون حلاقة علي",
-    "description": "Barber shop in Pinellas Park, FL offering skin fades, taper fades, line-ups, beard trims, and hot towel shaves. English and Arabic spoken.",
-    "image": "https://alisbarbershop.com/og-image.webp",
+    "description": "Barbershop in Pinellas Park, FL offering skin fades, taper fades, line-ups, beard trims, and hot towel shaves. English and Arabic spoken.",
+    "image": [
+      "https://alisbarbershop.com/og-image.jpg",
+      "https://alisbarbershop.com/hero-barber-1280.webp"
+    ],
     "logo": "https://alisbarbershop.com/logo.png",
     "url": "https://alisbarbershop.com/",
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": "4201 62nd North Unit 9",
+      "streetAddress": "4201 62nd Ave N, Unit 9",
       "addressLocality": "Pinellas Park",
       "addressRegion": "FL",
       "postalCode": "33781",
@@ -69,7 +73,7 @@
       "latitude": 27.8288039,
       "longitude": -82.6914737
     },
-    "hasMap": "https://www.google.com/maps/place/Ali's+Barbershop/@27.8288039,-82.6914737,17z/",
+    "hasMap": "https://www.google.com/maps?cid=15098769549046085973",
     "telephone": "+1-813-895-9229",
     "email": "alisbarbershop2026@gmail.com",
     "priceRange": "$$",
@@ -89,9 +93,22 @@
       ]
     },
     "openingHoursSpecification": [
-      { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Tuesday","Wednesday","Thursday","Friday"], "opens": "08:30", "closes": "17:30" },
-      { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "09:00", "closes": "16:00" }
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": "Sunday", "opens": "09:00", "closes": "15:00" },
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "09:00", "closes": "21:00" },
+      { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "09:00", "closes": "19:00" }
     ],
+    "potentialAction": {
+      "@type": "ReserveAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://alisbarbershop.com/#booking",
+        "actionPlatform": [
+          "http://schema.org/DesktopWebPlatform",
+          "http://schema.org/MobileWebPlatform"
+        ]
+      },
+      "result": { "@type": "Reservation", "name": "Barbershop appointment" }
+    },
     "sameAs": [
       "https://www.instagram.com/alisbarbershop2026",
       "https://www.facebook.com/profile.php?id=61574278858877",
@@ -106,6 +123,36 @@
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N5G6ZXP2"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Crawlable snapshot for agents that do not run JavaScript. React
+         replaces #root on mount, so this is never shown to JS visitors. -->
+    <noscript>
+      <header>
+        <p>Ali's Barber Shop</p>
+        <p><a href="tel:8138959229">813-895-9229</a></p>
+      </header>
+      <main>
+        <h1>Ali's Barber Shop — Fades, Line-Ups &amp; Beard Trims in Pinellas Park, FL</h1>
+        <p>Men's barbershop at 4201 62nd Ave N, Unit 9, Pinellas Park, FL 33781. Skin fades, taper fades, line-ups, beard trims, and hot towel shaves. English and Arabic spoken.</p>
+        <h2>Hours</h2>
+        <ul>
+          <li>Sunday: 9:00 AM – 3:00 PM</li>
+          <li>Monday–Friday: 9:00 AM – 9:00 PM</li>
+          <li>Saturday: 9:00 AM – 7:00 PM</li>
+        </ul>
+        <h2>Services</h2>
+        <ul>
+          <li>Haircut</li>
+          <li>Skin fade</li>
+          <li>Taper fade</li>
+          <li>Line-up / edge-up</li>
+          <li>Beard trim</li>
+          <li>Hot towel shave</li>
+        </ul>
+        <p><a href="https://alisbarbershop.com/#booking">Book an appointment online</a> or call <a href="tel:8138959229">813-895-9229</a>.</p>
+        <p><a href="https://www.google.com/maps?cid=15098769549046085973&amp;hl=en&amp;gl=US">Get directions</a></p>
+      </main>
+    </noscript>
 
     <!-- Google Tag Manager — deferred.
          GTM used to be the first tag in <head>, where it won the network race

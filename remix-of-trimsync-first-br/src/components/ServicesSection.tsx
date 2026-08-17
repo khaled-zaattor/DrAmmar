@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Scissors } from "lucide-react";
 import { api, type TopService } from "@/lib/api";
+import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/business";
 
 interface ServicesSectionProps {
   onBookService?: (serviceId: number) => void;
@@ -31,7 +32,12 @@ const ServicesSection = ({ onBookService }: ServicesSectionProps) => {
             Our Services
           </h2>
           <p className="font-body text-primary-foreground/50 mt-4 max-w-lg">
-            Every service is delivered with precision and care by our expert team.
+            Skin fades, taper fades, classic haircuts, line-ups, beard trims, and
+            hot towel shaves — priced from the list below. Book online or{" "}
+            <a href={PHONE_TEL} className="text-accent hover:underline">
+              call {PHONE_DISPLAY}
+            </a>
+            .
           </p>
           {error && (
             <p className="font-body text-primary-foreground/40 text-sm mt-3">
@@ -67,8 +73,11 @@ const ServicesSection = ({ onBookService }: ServicesSectionProps) => {
                     {service.image_url ? (
                       <img
                         src={service.image_url}
-                        alt={service.name}
+                        alt={`${service.name} at Ali's Barber Shop in Pinellas Park, FL`}
+                        width={640}
+                        height={256}
                         loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                     ) : (

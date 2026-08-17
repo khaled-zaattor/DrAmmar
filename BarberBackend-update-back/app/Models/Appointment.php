@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -69,19 +70,38 @@ class Appointment extends Model
     }
 
     /**
-     * Every booking by the same customer, including this one.
+     * Per-row visit total for the admin list (same customer, countable statuses).
      *
-     * Self-referencing on customer_id so the admin list can count visits for a
-     * whole page of appointments with one correlated subquery via withCount(),
-     * instead of a query per row.
-     *
-     * Legacy rows with a null customer_id count 0 — in SQL `null = null` is
-     * never true, so they don't group together.
+     * Do not use withCount() on a self-referential hasMany here: both sides of
+     * the join resolve to `appointments.customer_id`, so every row got the
+     * shop-wide total instead of that customer's count.
      */
-    public function customerVisits(): HasMany
+    public function scopeWithCustomerVisitCount(Builder $query): Builder
     {
-        return $this->hasMany(self::class, 'customer_id', 'customer_id')
-                    ->whereIn('status', Customer::COUNTABLE_STATUSES);
+        $visits = static::query()
+            ->from('appointments as customer_visits')
+            ->selectRaw('count(*)')
+            ->whereColumn('customer_visits.customer_id', 'appointments.customer_id')
+            ->whereIn('customer_visits.status', Customer::COUNTABLE_STATUSES);
+
+        return $query->addSelect(['customer_visits_count' => $visits]);
+    }
+
+    /** Countable bookings for this row's customer, including this one. */
+    public function countableVisitCount(): ?int
+    {
+        if ($this->customer_id === null) {
+            return null;
+        }
+
+        if (array_key_exists('customer_visits_count', $this->getAttributes())) {
+            return (int) $this->getAttribute('customer_visits_count');
+        }
+
+        return static::query()
+            ->where('customer_id', $this->customer_id)
+            ->whereIn('status', Customer::COUNTABLE_STATUSES)
+            ->count();
     }
 
     public function service(): BelongsTo
