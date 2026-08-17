@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AvailabilityRequest;
 use App\Models\BusinessHour;
 use App\Services\AvailabilityService;
+use App\Support\PublicCache;
 use Illuminate\Http\JsonResponse;
 
 class AvailabilityController extends Controller
@@ -45,13 +46,17 @@ class AvailabilityController extends Controller
      */
     public function businessHours(): JsonResponse
     {
-        $hours = BusinessHour::orderBy('day_of_week')->get([
-            'day_of_week',
-            'open_time',
-            'close_time',
-            'is_closed',
-            'slot_duration',
-        ]);
+        // Only the fixed weekly hours are cached — the /availability endpoint
+        // above returns live slot data and must never be cached.
+        $hours = PublicCache::remember('business-hours', fn () => BusinessHour::orderBy('day_of_week')
+            ->get([
+                'day_of_week',
+                'open_time',
+                'close_time',
+                'is_closed',
+                'slot_duration',
+            ])
+            ->toArray());
 
         return response()->json([
             'success' => true,

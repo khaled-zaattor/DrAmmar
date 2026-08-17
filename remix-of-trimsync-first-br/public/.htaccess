@@ -1,6 +1,64 @@
+# ---------------------------------------------------------------------------
+# Redirects — must come before the SPA catch-all below.
+# ---------------------------------------------------------------------------
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  # /location used to be a client-side window.location.replace inside React,
+  # which meant crawlers got a blank page carrying the homepage's canonical tag
+  # and users waited for the JS bundle before being redirected. A real 301 is
+  # both correct for SEO and instant.
+  RewriteRule ^location/?$ "https://www.google.com/maps/place/Ali's+Barbershop/@27.8286777,-82.6982536,16z/data=!4m10!1m2!2m1!1sAli's+Barbershop,+4201+62nd+North+Unit+9,+Pinellas+Park,+FL+33781!3m6!1s0x88c2e5e61c59b849:0xd1899ae87c607955!8m2!3d27.8288039!4d-82.6914737!16s%2Fg%2F11xkrdhb2h?hl=en-US" [R=301,L,NE]
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Compression. LiteSpeed/Apache on most shared hosts honour this; if the host
+# already compresses, this is a harmless no-op.
+# ---------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/x-javascript
+  AddOutputFilterByType DEFLATE application/json application/xml
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Caching.
+#
+# The split matters: files under /assets/ carry a content hash in their name,
+# so a change always produces a new URL and they can be cached forever.
+# Everything in the site root (hero images, icons, og-image) keeps its filename
+# across deploys, so an immutable year-long cache there would strand returning
+# visitors on stale files. index.html must always be revalidated or nobody
+# picks up a new build at all.
+# ---------------------------------------------------------------------------
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|woff2?)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # Unhashed root assets — a week, revalidated after that.
+  <FilesMatch "\.(webp|jpe?g|png|gif|svg|ico)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+
+  <FilesMatch "^(index\.html|robots\.txt|sitemap\.xml|llms\.txt)$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+
+  # Hashed build output overrides the image rule above for anything in /assets/.
+  <IfModule mod_setenvif.c>
+    SetEnvIf Request_URI "^/assets/" HASHED_ASSET=1
+    Header set Cache-Control "public, max-age=31536000, immutable" env=HASHED_ASSET
+  </IfModule>
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# SPA fallback — every unknown path is served index.html so React Router can
+# handle it. Keep this last.
+# ---------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/nav-logo.png";
+import logo from "@/assets/nav-logo.webp";
 
 const navLinks = [
   { label: "Location", href: "/location" },
@@ -32,7 +32,13 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-primary/90 backdrop-blur-sm">
       <div className="section-padding max-w-[1400px] mx-auto flex items-center justify-between h-16">
         <a href="#" className="flex items-center gap-2">
-          <img src={logo} alt="Ali's Barber Shop" className="h-10 w-10 object-contain" />
+          <img
+            src={logo}
+            alt="Ali's Barber Shop"
+            width={40}
+            height={40}
+            className="h-10 w-10 object-contain"
+          />
           <span className="font-display text-primary-foreground text-2xl tracking-wider uppercase">
             Ali's Barber Shop
           </span>

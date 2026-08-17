@@ -15,6 +15,7 @@ class Appointment extends Model
 
     protected $fillable = [
         'booking_reference',
+        'customer_id',
         'customer_name',
         'customer_email',
         'customer_phone',
@@ -60,6 +61,27 @@ class Appointment extends Model
     public function barber(): BelongsTo
     {
         return $this->belongsTo(Barber::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Every booking by the same customer, including this one.
+     *
+     * Self-referencing on customer_id so the admin list can count visits for a
+     * whole page of appointments with one correlated subquery via withCount(),
+     * instead of a query per row.
+     *
+     * Legacy rows with a null customer_id count 0 — in SQL `null = null` is
+     * never true, so they don't group together.
+     */
+    public function customerVisits(): HasMany
+    {
+        return $this->hasMany(self::class, 'customer_id', 'customer_id')
+                    ->whereIn('status', Customer::COUNTABLE_STATUSES);
     }
 
     public function service(): BelongsTo

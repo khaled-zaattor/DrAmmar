@@ -111,6 +111,16 @@ const AppointmentForm = () => {
             <Field label="Full Name"    value={appointment.customer_name || appointment.name} />
             <Field label="Email"        value={appointment.customer_email || appointment.email} />
             <Field label="Phone"        value={appointment.customer_phone || appointment.phone} />
+            <Field
+              label="Bookings so far"
+              value={
+                appointment.customer_visits_count == null
+                  ? null
+                  : appointment.customer_visits_count <= 1
+                    ? 'First booking'
+                    : `${appointment.customer_visits_count} bookings`
+              }
+            />
           </div>
 
           {/* Appointment Info */}

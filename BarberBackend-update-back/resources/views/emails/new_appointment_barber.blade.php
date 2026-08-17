@@ -37,6 +37,17 @@
             <div class="row"><span class="label">Name</span><span class="value">{{ $appointment->customer_name }}</span></div>
             <div class="row"><span class="label">Email</span><span class="value">{{ $appointment->customer_email }}</span></div>
             <div class="row"><span class="label">Phone</span><span class="value">{{ $appointment->customer_phone }}</span></div>
+            <div class="row">
+                <span class="label">History</span>
+                <span class="value">
+                    @if ($isNewCustomer)
+                        <span class="badge">New customer</span>
+                    @else
+                        {{ $ordinal }} booking
+                        <span class="label">&mdash; {{ $visitCount - 1 }} previous {{ \Illuminate\Support\Str::plural('visit', $visitCount - 1) }}</span>
+                    @endif
+                </span>
+            </div>
         </div>
 
         <div class="section">

@@ -9,6 +9,7 @@ use App\Http\Resources\BarberResource;
 use App\Models\Appointment;
 use App\Models\Barber;
 use App\Services\ImageUploadService;
+use App\Support\PublicCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -101,6 +102,8 @@ class BarberController extends Controller
 
         if (!empty($serviceIds)) {
             $barber->services()->sync($serviceIds);
+            // sync() bypasses model events, so bump the public cache by hand.
+            PublicCache::bump();
         }
 
         $barber->load('services');
@@ -129,6 +132,8 @@ class BarberController extends Controller
 
         if ($serviceIds !== null) {
             $barber->services()->sync($serviceIds);
+            // sync() bypasses model events, so bump the public cache by hand.
+            PublicCache::bump();
         }
 
         $barber->load('services');

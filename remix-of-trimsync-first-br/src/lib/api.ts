@@ -2,16 +2,55 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL}/api`
   : "/api";
 
-const JSON_HEADERS: HeadersInit = {
+// ─── Errors ───────────────────────────────────────────────────────────────────
+// TimeoutError/NetworkError messages are written for humans and are safe to
+// show directly. HttpError messages come from Laravel and may contain field
+// names, so the UI should not surface them verbatim.
+
+export class TimeoutError extends Error {
+  constructor(
+    message = "The server took too long to respond. Please try again."
+  ) {
+    super(message);
+    this.name = "TimeoutError";
+  }
+}
+
+export class NetworkError extends Error {
+  constructor(
+    message = "Couldn't reach the server. Please check your connection and try again."
+  ) {
+    super(message);
+    this.name = "NetworkError";
+  }
+}
+
+export class HttpError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = "HttpError";
+  }
+}
+
+// Accept is a CORS-safelisted request header, so GETs using only this do NOT
+// trigger a preflight. Never add Content-Type here: it is not safelisted, and
+// on a bodyless GET it buys nothing while doubling every request into
+// OPTIONS + GET against a shared host.
+const GET_HEADERS: HeadersInit = {
   Accept: "application/json",
+};
+
+// For requests that actually send a JSON body. These do preflight, which is
+// unavoidable — config/cors.php max_age keeps it from repeating.
+const JSON_HEADERS: HeadersInit = {
+  ...GET_HEADERS,
   "Content-Type": "application/json",
 };
 
-function authHeaders(): HeadersInit {
+function authHeaders(withBody = false): HeadersInit {
   const token = localStorage.getItem("auth_token");
-  return token
-    ? { ...JSON_HEADERS, Authorization: `Bearer ${token}` }
-    : JSON_HEADERS;
+  const base = withBody ? JSON_HEADERS : GET_HEADERS;
+  return token ? { ...base, Authorization: `Bearer ${token}` } : base;
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
@@ -25,7 +64,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
     const message =
       fieldErrors || body?.message || `Request failed (${res.status})`;
     console.error("API error body:", body);
-    throw new Error(message);
+    throw new HttpError(message, res.status);
   }
   return res.json();
 }
@@ -144,14 +183,67 @@ export interface User {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function fetchWithTimeout(
+// Read requests get a generous ceiling — this is a give-up bound, not an
+// expected latency. Shared hosting can stall for seconds under a cold PHP boot.
+const DEFAULT_TIMEOUT_MS = 12_000;
+const RETRY_DELAYS_MS = [500, 1500]; // 2 retries => 3 attempts max
+
+async function fetchWithTimeout(
   input: RequestInfo | URL,
   init: RequestInit = {},
-  timeoutMs = 6000
+  timeoutMs = DEFAULT_TIMEOUT_MS
 ): Promise<Response> {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  return fetch(input, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(timer));
+  const reason = new TimeoutError();
+  const timer = setTimeout(() => ctrl.abort(reason), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: ctrl.signal });
+  } catch (err) {
+    // Two paths converge here:
+    //   modern browsers reject with our `reason`
+    //   Safari < 16.4 ignores abort()'s argument and rejects with a bare
+    //   AbortError DOMException — the "signal is aborted without reason" text
+    // Checking signal.aborted normalises both so that string can never surface.
+    if (ctrl.signal.aborted) throw reason;
+    if (err instanceof TypeError) throw new NetworkError(); // offline / DNS / CORS-blocked
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Retry transient failures only. A 4xx will fail identically on a retry and
+// would just burn scarce PHP workers.
+function isRetryable(err: unknown): boolean {
+  if (err instanceof TimeoutError || err instanceof NetworkError) return true;
+  if (err instanceof HttpError) return [429, 502, 503, 504].includes(err.status);
+  return false;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Single retry layer for the app — react-query is configured with retry: 0 so
+// attempts don't multiply across the two layers.
+async function getJson<T>(
+  path: string,
+  opts: { timeoutMs?: number; retries?: number } = {}
+): Promise<T> {
+  const maxRetries = opts.retries ?? RETRY_DELAYS_MS.length;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetchWithTimeout(
+        `${BASE_URL}${path}`,
+        { headers: GET_HEADERS },
+        opts.timeoutMs
+      );
+      return await handleResponse<T>(res);
+    } catch (err) {
+      if (attempt >= maxRetries || !isRetryable(err)) throw err;
+      const base = RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)];
+      // ±25% jitter so multiple tabs/users don't re-burst the pool in lockstep
+      await sleep(base * (0.75 + Math.random() * 0.5));
+    }
+  }
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
@@ -160,33 +252,33 @@ export const api = {
   // Public ─────────────────────────────────────────────────────────────────────
 
   getCategories(): Promise<ServiceCategory[]> {
-    return fetchWithTimeout(`${BASE_URL}/categories`, { headers: JSON_HEADERS })
-      .then((res) => handleResponse<unknown>(res))
-      .then((body) => extractArray<ServiceCategory>(body));
+    return getJson<unknown>("/categories").then((body) =>
+      extractArray<ServiceCategory>(body)
+    );
   },
 
   getTopBookedServices(limit = 6): Promise<TopService[]> {
-    return fetchWithTimeout(`${BASE_URL}/services/top-booked?limit=${limit}`, { headers: JSON_HEADERS })
-      .then((res) => handleResponse<unknown>(res))
-      .then((body) => extractArray<TopService>(body));
+    return getJson<unknown>(`/services/top-booked?limit=${limit}`).then((body) =>
+      extractArray<TopService>(body)
+    );
   },
 
   getBusinessHours(): Promise<BusinessHours[]> {
-    return fetchWithTimeout(`${BASE_URL}/business-hours`, { headers: JSON_HEADERS })
-      .then((res) => handleResponse<unknown>(res))
-      .then((body) => extractArray<BusinessHours>(body));
+    return getJson<unknown>("/business-hours").then((body) =>
+      extractArray<BusinessHours>(body)
+    );
   },
 
   getServices(): Promise<Service[]> {
-    return fetchWithTimeout(`${BASE_URL}/services`, { headers: JSON_HEADERS })
-      .then((res) => handleResponse<unknown>(res))
-      .then((body) => extractArray<Service>(body));
+    return getJson<unknown>("/services").then((body) =>
+      extractArray<Service>(body)
+    );
   },
 
   getBarbers(): Promise<Barber[]> {
-    return fetchWithTimeout(`${BASE_URL}/barbers`, { headers: JSON_HEADERS })
-      .then((res) => handleResponse<unknown>(res))
-      .then((body) => extractArray<Barber>(body));
+    return getJson<unknown>("/barbers").then((body) =>
+      extractArray<Barber>(body)
+    );
   },
 
   // Returns available_slots array: ["08:30", "09:00", ...]
@@ -196,10 +288,9 @@ export const api = {
       date,
     });
     if (duration) params.append('duration', String(duration));
-    return fetchWithTimeout(`${BASE_URL}/availability?${params}`, {
-      headers: JSON_HEADERS,
-    })
-      .then((res) => handleResponse<unknown>(res))
+    // Interactive — the user is watching a spinner, so fail faster and retry
+    // once rather than making them wait out the full budget.
+    return getJson<unknown>(`/availability?${params}`, { timeoutMs: 8000, retries: 1 })
       .then((body) => {
         // Response shape: { success: true, data: { date, barber_id, available_slots: [] } }
         if (body && typeof body === "object") {
@@ -215,20 +306,22 @@ export const api = {
       });
   },
 
+  // Writes get a timeout so a stalled request can't spin forever, but are
+  // never retried — POST is not idempotent and a retry could double-book.
   bookAppointment(data: AppointmentPayload): Promise<AppointmentResponse> {
-    return fetch(`${BASE_URL}/appointments`, {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data),
-    }).then((res) => handleResponse<AppointmentResponse>(res));
+    return fetchWithTimeout(
+      `${BASE_URL}/appointments`,
+      { method: "POST", headers: JSON_HEADERS, body: JSON.stringify(data) },
+      20_000
+    ).then((res) => handleResponse<AppointmentResponse>(res));
   },
 
   submitContact(data: ContactPayload): Promise<{ message: string }> {
-    return fetch(`${BASE_URL}/contact`, {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data),
-    }).then((res) => handleResponse<{ message: string }>(res));
+    return fetchWithTimeout(
+      `${BASE_URL}/contact`,
+      { method: "POST", headers: JSON_HEADERS, body: JSON.stringify(data) },
+      20_000
+    ).then((res) => handleResponse<{ message: string }>(res));
   },
 
   // Auth ───────────────────────────────────────────────────────────────────────
@@ -237,22 +330,27 @@ export const api = {
     email: string,
     password: string
   ): Promise<{ token: string; user: User }> {
-    return fetch(`${BASE_URL}/login`, {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify({ email, password }),
-    }).then((res) => handleResponse<{ token: string; user: User }>(res));
+    return fetchWithTimeout(
+      `${BASE_URL}/login`,
+      {
+        method: "POST",
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ email, password }),
+      },
+      20_000
+    ).then((res) => handleResponse<{ token: string; user: User }>(res));
   },
 
   logout(): Promise<{ message: string }> {
-    return fetch(`${BASE_URL}/logout`, {
+    // No body, so no Content-Type — one less header on the preflight.
+    return fetchWithTimeout(`${BASE_URL}/logout`, {
       method: "POST",
       headers: authHeaders(),
     }).then((res) => handleResponse<{ message: string }>(res));
   },
 
   getUser(): Promise<User> {
-    return fetch(`${BASE_URL}/user`, { headers: authHeaders() }).then(
+    return fetchWithTimeout(`${BASE_URL}/user`, { headers: authHeaders() }).then(
       (res) => handleResponse<User>(res)
     );
   },

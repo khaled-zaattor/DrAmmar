@@ -17,7 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'role'         => \App\Http\Middleware\RoleMiddleware::class,
+            'public.cache' => \App\Http\Middleware\CachePublicResponse::class,
         ]);
         $middleware->appendToGroup('api', \App\Http\Middleware\ParsePutFormData::class);
     })

@@ -15,6 +15,11 @@ class AppointmentResource extends JsonResource
             'customer_name'     => $this->customer_name,
             'customer_email'    => $this->customer_email,
             'customer_phone'    => $this->customer_phone,
+            // null (not 0) for rows predating `customers:backfill`, so the admin
+            // UI can show "—" rather than a misleading zero.
+            'customer_visits_count' => $this->customer_id
+                ? $this->whenCounted('customerVisits')
+                : null,
             'barber'            => new BarberResource($this->whenLoaded('barber')),
             'service'           => new ServiceResource($this->whenLoaded('service')),
             'services'          => ServiceResource::collection($this->whenLoaded('services')),

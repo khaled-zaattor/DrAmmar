@@ -26,22 +26,23 @@ Route::post('/login', [AuthController::class, 'login']);
 // Contact form
 Route::post('/contact', [ContactController::class, 'store']);
 
-// Services (public listing)
-Route::get('/services/top-booked', [ServiceController::class, 'topBooked']);
-Route::get('/services', [ServiceController::class, 'index']);
+// Public listings — hit by every visitor on page load, and only change when an
+// admin edits them. Cached server-side (App\Support\PublicCache) and given a
+// Cache-Control header so repeat views skip PHP entirely.
+Route::middleware('public.cache:300')->group(function () {
+    Route::get('/services/top-booked', [ServiceController::class, 'topBooked']);
+    Route::get('/services',            [ServiceController::class, 'index']);
+    Route::get('/categories',          [CategoryController::class, 'index']);
+    Route::get('/barbers',             [BarberController::class, 'index']);
+    Route::get('/business-hours',      [AvailabilityController::class, 'businessHours']);
+});
+
 Route::get('/services/{service}', [ServiceController::class, 'show']);
-
-// Categories (public listing)
-Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{category}', [CategoryController::class, 'show']);
-
-// Barbers (public listing)
-Route::get('/barbers', [BarberController::class, 'index']);
 Route::get('/barbers/{barber}', [BarberController::class, 'show']);
 
-// Availability checker
+// Availability checker — live data, deliberately NOT cached.
 Route::get('/availability',    [AvailabilityController::class, 'index']);
-Route::get('/business-hours',  [AvailabilityController::class, 'businessHours']);
 
 // Book an appointment (public)
 Route::post('/appointments', [AppointmentController::class, 'store']);

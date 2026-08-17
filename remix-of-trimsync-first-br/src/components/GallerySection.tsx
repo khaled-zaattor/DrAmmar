@@ -1,11 +1,13 @@
-import g1 from "@/assets/gallery-1.jpg";
-import g2 from "@/assets/gallery-2.jpg";
-import g3 from "@/assets/gallery-3.jpg";
-import g4 from "@/assets/gallery-4.jpg";
-import g5 from "@/assets/gallery-5.jpg";
-import g6 from "@/assets/gallery-6.jpg";
+import g1 from "@/assets/gallery-1.webp";
+import g2 from "@/assets/gallery-2.webp";
+import g3 from "@/assets/gallery-3.webp";
+import g4 from "@/assets/gallery-4.webp";
+import g5 from "@/assets/gallery-5.webp";
+import g6 from "@/assets/gallery-6.webp";
+// gallery-7 stays JPEG: the source is small and low-resolution, and WebP came
+// out larger at every quality. See scripts/optimize-images.mjs.
 import g7 from "@/assets/gallery-7.jpg";
-import g8 from "@/assets/gallery-8.jpg";
+import g8 from "@/assets/gallery-8.webp";
 
 const images = [
   { src: g1, alt: "Men's skin fade haircut at Ali's Barber Shop in Pinellas Park, FL" },
@@ -35,8 +37,11 @@ const GallerySection = () => {
               <img
                 src={src}
                 alt={alt}
+                width={800}
+                height={800}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                 loading="lazy"
+                decoding="async"
               />
             </div>
           ))}

@@ -2,7 +2,15 @@ import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "re
 import { ChevronLeft, ChevronRight, CheckCircle, Calendar, Clock, User, Scissors, Search, X } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { api, type Service, type Barber, type AppointmentResponse, type ServiceCategory } from "@/lib/api";
+import {
+  api,
+  NetworkError,
+  TimeoutError,
+  type Service,
+  type Barber,
+  type AppointmentResponse,
+  type ServiceCategory,
+} from "@/lib/api";
 
 const getDaysInMonth = (year: number, month: number) =>
   new Date(year, month + 1, 0).getDate();
@@ -11,6 +19,39 @@ const getFirstDayOfMonth = (year: number, month: number) =>
 
 const inputCls =
   "font-body text-base py-3 px-4 bg-transparent border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/40 focus:border-accent focus:outline-none transition-colors w-full";
+
+// ─── Load failure + retry ──────────────────────────────────────────────────────
+
+// Only TimeoutError/NetworkError messages are shown verbatim — those are ours
+// and written for humans. Anything else (HttpError) carries Laravel's message,
+// which can include field names, so it gets a generic fallback instead.
+const LoadError = ({
+  error,
+  fallback,
+  onRetry,
+  retrying,
+}: {
+  error: unknown;
+  fallback: string;
+  onRetry: () => void;
+  retrying: boolean;
+}) => (
+  <div className="mt-3 border border-red-400/30 bg-red-400/5 p-4 text-center">
+    <p className="font-body text-red-300 text-sm">
+      {error instanceof TimeoutError || error instanceof NetworkError
+        ? error.message
+        : fallback}
+    </p>
+    <button
+      type="button"
+      onClick={onRetry}
+      disabled={retrying}
+      className="mt-3 font-body text-sm px-4 py-2 min-h-[44px] border border-primary-foreground/30 text-primary-foreground/80 hover:border-primary-foreground/60 disabled:opacity-50 transition-colors"
+    >
+      {retrying ? "Retrying…" : "Try again"}
+    </button>
+  </div>
+);
 
 // ─── Confirmation screen ───────────────────────────────────────────────────────
 
@@ -109,7 +150,8 @@ const ConfirmationScreen = ({
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export type BookingSectionHandle = {
-  chooseBarber: () => void;
+  /** Scroll to (and open) the first step the customer has not completed. */
+  goToNextStep: () => void;
 };
 
 const BookingSection = forwardRef<BookingSectionHandle, {
@@ -136,11 +178,33 @@ const BookingSection = forwardRef<BookingSectionHandle, {
   const [phoneError, setPhoneError] = useState("");
   const [showBarberSection, setShowBarberSection] = useState(false);
 
+  // Takes the customer to whatever they still have to do, rather than always
+  // bouncing them to the top of the booking section — which used to scroll them
+  // *away* from the step they had just been given.
   useImperativeHandle(ref, () => ({
-    chooseBarber: () => {
-      if (selectedServices.length === 0) return;
-      setShowBarberSection(true);
-      setTimeout(() => scrollToSection(barberRef), 50);
+    goToNextStep: () => {
+      if (selectedServices.length === 0) {
+        document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      if (!selectedBarber) {
+        setShowBarberSection(true);
+        setTimeout(() => scrollToSection(barberRef), 50);
+        return;
+      }
+
+      if (!selectedDay) {
+        scrollToSection(calendarRef);
+        return;
+      }
+
+      if (!selectedTime) {
+        scrollToSection(timeSlotsRef);
+        return;
+      }
+
+      scrollToSection(contactRef);
     },
   }));
 
@@ -207,11 +271,16 @@ const BookingSection = forwardRef<BookingSectionHandle, {
     (rawHours ?? []).filter((h) => h.is_closed).map((h) => h.day_of_week)
   );
 
-  const { data: rawServices, isLoading: servicesLoading, error: servicesError } = useQuery({
+  const {
+    data: rawServices,
+    isLoading: servicesLoading,
+    error: servicesError,
+    refetch: refetchServices,
+    isFetching: servicesFetching,
+  } = useQuery({
     queryKey: ["services"],
     queryFn: () => api.getServices(),
     staleTime: 5 * 60 * 1000,
-    retry: 1,
   });
   const services: Service[] = Array.isArray(rawServices) ? rawServices : [];
 
@@ -245,11 +314,16 @@ const BookingSection = forwardRef<BookingSectionHandle, {
     }
   }, [confirmedBooking]);
 
-  const { data: rawBarbers, isLoading: barbersLoading, error: barbersError } = useQuery({
+  const {
+    data: rawBarbers,
+    isLoading: barbersLoading,
+    error: barbersError,
+    refetch: refetchBarbers,
+    isFetching: barbersFetching,
+  } = useQuery({
     queryKey: ["barbers"],
     queryFn: () => api.getBarbers(),
     staleTime: 5 * 60 * 1000,
-    retry: 1,
   });
   const allBarbers: Barber[] = Array.isArray(rawBarbers) ? rawBarbers : [];
 
@@ -269,12 +343,13 @@ const BookingSection = forwardRef<BookingSectionHandle, {
     data: timeSlots = [],
     isLoading: availabilityLoading,
     error: availabilityError,
+    refetch: refetchAvailability,
+    isFetching: availabilityFetching,
   } = useQuery({
     queryKey: ["availability", selectedBarber?.id, selectedDate, totalDuration],
     queryFn: () => api.getAvailability(selectedBarber!.id, selectedDate!, totalDuration || undefined),
     enabled: !!selectedBarber && !!selectedDate,
     staleTime: 30 * 1000,
-    retry: 1,
   });
 
   const todayInET = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
@@ -486,9 +561,12 @@ const BookingSection = forwardRef<BookingSectionHandle, {
               ))}
             </div>
           ) : servicesError ? (
-            <p className="mt-3 font-body text-red-400 text-sm">
-              Failed to load services: {(servicesError as Error).message}
-            </p>
+            <LoadError
+              error={servicesError}
+              fallback="We couldn't load our services right now."
+              onRetry={() => refetchServices()}
+              retrying={servicesFetching}
+            />
           ) : browsedServices.length === 0 ? (
             <p className="mt-6 font-body text-primary-foreground/40 text-sm text-center py-8">
               No services found{searchQuery ? ` for "${searchQuery}"` : ""}.
@@ -633,9 +711,12 @@ const BookingSection = forwardRef<BookingSectionHandle, {
                 ))}
               </div>
             ) : barbersError ? (
-              <p className="mt-3 font-body text-red-400 text-sm">
-                Failed to load barbers: {(barbersError as Error).message}
-              </p>
+              <LoadError
+                error={barbersError}
+                fallback="We couldn't load our barbers right now."
+                onRetry={() => refetchBarbers()}
+                retrying={barbersFetching}
+              />
             ) : barbers.length === 0 ? (
               <p className="mt-3 font-body text-primary-foreground/40 text-sm">
                 No barbers offer all selected services. Try removing a service or selecting a different combination.
@@ -767,9 +848,12 @@ const BookingSection = forwardRef<BookingSectionHandle, {
                 ))}
               </div>
             ) : availabilityError ? (
-              <p className="mt-3 font-body text-red-400 text-sm">
-                Could not load availability. Please try again.
-              </p>
+              <LoadError
+                error={availabilityError}
+                fallback="We couldn't load available times right now."
+                onRetry={() => refetchAvailability()}
+                retrying={availabilityFetching}
+              />
             ) : visibleSlots.length === 0 ? (
               <p className="mt-3 font-body text-primary-foreground/40 text-sm">
                 No available slots for this date. Please choose another day.

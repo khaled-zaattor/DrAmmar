@@ -11,7 +11,6 @@ const ServicesSection = ({ onBookService }: ServicesSectionProps) => {
     queryKey: ["top-booked-services"],
     queryFn: () => api.getTopBookedServices(6),
     staleTime: 5 * 60 * 1000,
-    retry: 1,
   });
 
   const scrollToBooking = () => {

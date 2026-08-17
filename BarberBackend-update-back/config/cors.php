@@ -35,8 +35,14 @@ return [
 
     'exposed_headers' => [],
 
-    'max_age' => 0,
+    // Was 0, which meant the browser re-ran a preflight before *every* request.
+    // Chrome caps this at 7200s and Firefox at 86400s — either beats zero.
+    'max_age' => 86400,
 
-    'supports_credentials' => true,
+    // Both frontends authenticate with a Sanctum bearer token from
+    // localStorage; neither sends cookies (no credentials:'include',
+    // no withCredentials, no /sanctum/csrf-cookie call). Leaving this on only
+    // added the stricter credentialed-CORS rules for no benefit.
+    'supports_credentials' => false,
 
 ];

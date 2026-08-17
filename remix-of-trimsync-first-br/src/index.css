@@ -52,8 +52,11 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --font-display: 'Bebas Neue', sans-serif;
-    --font-body: 'Inter', sans-serif;
+    /* System fonts only — no webfont download, so nothing re-lays-out after
+       first paint. A condensed stack keeps the display type close to the
+       Bebas Neue look it replaces. */
+    --font-display: 'Arial Narrow', 'Helvetica Neue Condensed', 'Liberation Sans Narrow', 'Segoe UI', system-ui, sans-serif;
+    --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
 
   .dark {

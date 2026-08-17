@@ -5,7 +5,7 @@ import { FiFilter } from 'react-icons/fi';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import {
-  extractData, getStatusStyle, formatDate, formatTime,
+  extractData, getStatusStyle, getVisitsBadge, formatDate, formatTime,
   getApptDate, getApptTime,
 } from '../utils/helpers';
 
@@ -213,6 +213,7 @@ const AppointmentsList = () => {
                 <tr>
                   <th>#</th>
                   <th>Customer</th>
+                  <th>Visits</th>
                   <th>Phone</th>
                   <th>Barber</th>
                   <th>Service</th>
@@ -225,6 +226,7 @@ const AppointmentsList = () => {
               <tbody>
                 {appointments.map((appt) => {
                   const st = getStatusStyle(appt.status);
+                  const visits = getVisitsBadge(appt.customer_visits_count);
                   return (
                     <tr key={appt.id}>
                       <td className="col-index" style={{ color: '#a0aec0', fontSize: 12, whiteSpace: 'nowrap' }}>
@@ -237,6 +239,23 @@ const AppointmentsList = () => {
                         <div style={{ fontSize: 12, color: '#a0aec0' }}>
                           {appt.customer_email || appt.email || ''}
                         </div>
+                      </td>
+                      <td data-label="Visits">
+                        {visits ? (
+                          <span
+                            className="badge"
+                            title={visits.title}
+                            style={{
+                              color: visits.color,
+                              background: visits.background,
+                              border: `1px solid ${visits.border}`,
+                            }}
+                          >
+                            {visits.label}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#cbd5e0' }}>—</span>
+                        )}
                       </td>
                       <td data-label="Phone" style={{ color: '#718096', fontSize: 13 }}>
                         {appt.customer_phone || appt.phone || '—'}

@@ -1,26 +1,28 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-N5G6ZXP2');</script>
-<!-- End Google Tag Manager -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ali's Barber Shop | Best Fades &amp; Men's Grooming in Pinellas Park, FL</title>
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="apple-touch-icon" href="/logo.png" />
-    <link rel="preload" as="image" href="/hero-barber.jpg">
-    <link rel="preconnect" href="https://api.alisbarbershop.com">
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/favicon-32.png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Must match the <picture> srcset in HeroSection.tsx exactly, or the
+         browser preloads one candidate and then downloads another. -->
+    <link rel="preload" as="image" type="image/webp"
+          href="/hero-barber-1280.webp"
+          imagesrcset="/hero-barber-640.webp 640w, /hero-barber-960.webp 960w, /hero-barber-1280.webp 1280w, /hero-barber-1920.webp 1920w"
+          imagesizes="100vw"
+          fetchpriority="high">
+    <!-- crossorigin is required: CORS fetches use a separate connection pool,
+         so without it this warms a socket the API calls never reuse. -->
+    <link rel="preconnect" href="https://api.alisbarbershop.com" crossorigin>
     <link rel="dns-prefetch" href="https://api.alisbarbershop.com">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap"></noscript>
-    <meta name="description" content="Barber shop in Pinellas Park, FL. Skin fades, taper fades, line-ups, and beard trims by expert barbers — English and Arabic spoken. Book your appointment online today.">
+    <!-- No webfonts: the type stack is system-only (see --font-display /
+         --font-body in src/index.css). This drops two third-party origins from
+         the critical path and removes the late font swap that was reflowing
+         the hero after first paint. -->
+    <meta name="description" content="Barber shop in Pinellas Park, FL. Skin fades, taper fades, line-ups and beard trims by expert barbers. Book online today.">
     <meta name="author" content="Ali's Barber Shop" />
     <link rel="canonical" href="https://alisbarbershop.com/" />
 
@@ -104,6 +106,47 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N5G6ZXP2"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Google Tag Manager — deferred.
+         GTM used to be the first tag in <head>, where it won the network race
+         against the app bundle and forced ~158ms of layout reflow during the
+         initial render. dataLayer is still created immediately so any early
+         push is queued, but gtm.js is only fetched once the page is
+         interactive: on the first real user gesture, or when the browser goes
+         idle, whichever comes first.
+         Trade-off: a visitor who leaves within the idle timeout without
+         interacting is not counted. -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        var loaded = false;
+        function loadGTM() {
+          if (loaded) return;
+          loaded = true;
+          w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+          var f = d.getElementsByTagName(s)[0],
+            j = d.createElement(s),
+            dl = l != 'dataLayer' ? '&l=' + l : '';
+          j.async = true;
+          j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+          f.parentNode.insertBefore(j, f);
+        }
+        ['scroll', 'pointerdown', 'keydown', 'touchstart'].forEach(function (evt) {
+          w.addEventListener(evt, loadGTM, { once: true, passive: true });
+        });
+        // Wait for load before even scheduling the idle callback: the browser
+        // can go idle between parsing tasks, and requestIdleCallback on its own
+        // fired while the page was still loading.
+        w.addEventListener('load', function () {
+          if ('requestIdleCallback' in w) {
+            w.requestIdleCallback(loadGTM, { timeout: 5000 });
+          } else {
+            setTimeout(loadGTM, 3000);
+          }
+        });
+      })(window, document, 'script', 'dataLayer', 'GTM-N5G6ZXP2');
+    </script>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -1,11 +1,19 @@
-import logo from "@/assets/footer-logo.png";
+import logo from "@/assets/footer-logo.webp";
 
 const Footer = () => {
   return (
     <footer className="bg-primary section-padding pt-12 pb-28 md:py-12">
       <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-2">
-          <img src={logo} alt="Ali's Barber Shop" className="h-32 w-32 object-contain" />
+          <img
+            src={logo}
+            alt="Ali's Barber Shop"
+            width={128}
+            height={128}
+            loading="lazy"
+            decoding="async"
+            className="h-32 w-32 object-contain"
+          />
           <span className="font-display text-primary-foreground text-xl tracking-wider uppercase">
             Ali's Barber Shop
           </span>

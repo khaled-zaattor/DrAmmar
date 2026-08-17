@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ServiceCategoryResource;
 use App\Models\ServiceCategory;
+use App\Support\PublicCache;
 use Illuminate\Http\JsonResponse;
 
 class CategoryController extends Controller
@@ -15,14 +16,18 @@ class CategoryController extends Controller
      */
     public function index(): JsonResponse
     {
-        $categories = ServiceCategory::active()
-            ->ordered()
-            ->withCount('services')
-            ->get();
+        $data = PublicCache::remember('categories:index', function () {
+            $categories = ServiceCategory::active()
+                ->ordered()
+                ->withCount('services')
+                ->get();
+
+            return ServiceCategoryResource::collection($categories)->resolve();
+        });
 
         return response()->json([
             'success' => true,
-            'data'    => ServiceCategoryResource::collection($categories),
+            'data'    => $data,
         ]);
     }
 

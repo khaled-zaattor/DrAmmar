@@ -63,6 +63,20 @@ export const getStatusStyle = (status) => {
   return map[status] || { color: '#4a5568', background: '#f7fafc', border: '#e2e8f0' };
 };
 
+// How many times this customer has booked (cancellations and no-shows excluded).
+// null means the appointment predates the customer backfill.
+export const getVisitsBadge = (count) => {
+  if (count === null || count === undefined) return null;
+  if (count <= 1) {
+    return { label: 'New', title: 'First booking', color: '#975a16', background: '#fffaf0', border: '#f6ad55' };
+  }
+  return {
+    label: `${count}×`,
+    title: `${count} bookings so far`,
+    color: '#2c5282', background: '#ebf8ff', border: '#bee3f8',
+  };
+};
+
 export const getFollowUpStyle = (status) => {
   const map = {
     pending: { color: '#b7791f', background: '#fefcbf' },
