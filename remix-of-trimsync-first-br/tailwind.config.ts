@@ -2,7 +2,15 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  // Scan the application and the UI primitives it actually renders. Scanning
+  // every scaffolded shadcn component generated a large amount of unused CSS.
+  content: [
+    "./index.html",
+    "./src/*.{ts,tsx}",
+    "./src/pages/**/*.{ts,tsx}",
+    "./src/components/*.{ts,tsx}",
+    "./src/components/ui/{toast,toaster}.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {

@@ -94,6 +94,9 @@ Route::middleware('auth:sanctum')->group(function () {
             // Business hours (admin/receptionist only)
             Route::post('business-hours', [AdminAvailabilityController::class, 'updateBusinessHours']);
 
+            // Persist non-cancelled appointment totals for each client identifier
+            Route::post('appointments/sync-visit-counts', [Admin\AppointmentController::class, 'syncVisitCounts']);
+
             // User management + bulk admin actions (admin only — nested group)
             Route::middleware('role:admin')->group(function () {
                 Route::get('users',                         [UserController::class, 'index']);

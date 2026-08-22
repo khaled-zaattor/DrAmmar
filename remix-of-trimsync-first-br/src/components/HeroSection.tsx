@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import { Star } from "lucide-react";
 import { api } from "@/lib/api";
+
+const googleReviewsUrl =
+  "https://www.google.com/maps/place/Ali's+Barbershop/@27.8288039,-82.7676914,13z/data=!4m10!1m2!2m1!1sAli's+Barbershop,+4201+62nd+North+Unit+9,+Pinellas+Park,+FL+33781!3m6!1s0x88c2e5e61c59b849:0xd1899ae87c607955!8m2!3d27.8288039!4d-82.6914737!15sCkFBbGkncyBCYXJiZXJzaG9wLCA0MjAxIDYybmQgTm9ydGggVW5pdCA5LCBQaW5lbGxhcyBQYXJrLCBGTCAzMzc4MVpAIj5hbGkncyBiYXJiZXJzaG9wIDQyMDEgNjJuZCBub3J0aCB1bml0IDkgcGluZWxsYXMgcGFyayBmbCAzMzc4MZIBCmhhaXJfc2Fsb26aAURDaTlEUVVsUlFVTnZaRU5vZEhsalJqbHZUMnQzTVZwSFduRlNlazVUVlZaV05sUjZhRTFOYkd4eVRqSnJlVlJzUlJBQuABAPoBBAgAEDE!16s%2Fg%2F11xkrdhb2h?hl=en-US&entry=ttu&g_ep=EgoyMDI2MDUxMy4wIKXMDSoASAFQAw%3D%3D";
 
 const HeroSection = () => {
   const scrollToBooking = () => {
@@ -19,6 +23,8 @@ const HeroSection = () => {
         <img
           src="/hero-barber.jpg"
           alt="Barber giving a precision fade at Ali's Barber Shop in Pinellas Park, FL"
+          width="1920"
+          height="1080"
           className="w-full h-full object-cover opacity-60"
           style={{ objectPosition: "left bottom" }}
           {...({ fetchpriority: "high" } as React.ImgHTMLAttributes<HTMLImageElement>)}
@@ -43,6 +49,26 @@ const HeroSection = () => {
       <div className="relative z-10 mt-auto section-padding pb-16 md:pb-24">
         <div className="max-w-[1400px] mx-auto flex justify-end">
           <div className="w-full max-w-md">
+            <a
+              href={googleReviewsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Rated 5.0 on Google. Read our reviews"
+              className="mb-5 ml-auto flex w-fit items-center gap-3 border border-primary-foreground/20 bg-primary/75 px-4 py-3 text-left shadow-lg backdrop-blur-sm transition-colors duration-200 hover:border-accent/70 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+            >
+              <span className="font-display text-2xl leading-none text-primary-foreground">5.0</span>
+              <span className="flex flex-col gap-1">
+                <span className="flex items-center gap-0.5 text-accent" aria-hidden="true">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <Star key={index} size={14} fill="currentColor" strokeWidth={1.5} />
+                  ))}
+                </span>
+                <span className="font-body text-xs leading-none text-primary-foreground/80">
+                  on Google <span className="text-primary-foreground">· Read our reviews</span>
+                </span>
+              </span>
+            </a>
+
             {services.map((service) => (
               <div
                 key={service.id}

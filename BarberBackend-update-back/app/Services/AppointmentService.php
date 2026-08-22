@@ -78,12 +78,12 @@ class AppointmentService
 
         if ($appointment->barber && $appointment->barber->email) {
             Mail::to($appointment->barber->email)
-                ->send(new NewAppointmentBarberMail($appointment));
+                ->queue(new NewAppointmentBarberMail($appointment));
         }
 
         if ($appointment->customer_email) {
             Mail::to($appointment->customer_email)
-                ->send(new BookingConfirmationMail($appointment));
+                ->queue(new BookingConfirmationMail($appointment));
         }
 
         return $appointment;

@@ -1,20 +1,46 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-N5G6ZXP2');</script>
-<!-- End Google Tag Manager -->
+    <!-- Load GTM after the initial render, or immediately on first interaction. -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      (function (w, d) {
+        var loaded = false;
+        var events = ["pointerdown", "keydown", "touchstart", "scroll"];
+
+        function loadGtm() {
+          if (loaded) return;
+          loaded = true;
+          events.forEach(function (eventName) {
+            w.removeEventListener(eventName, loadGtm);
+          });
+          w.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
+          var script = d.createElement("script");
+          script.async = true;
+          script.src = "https://www.googletagmanager.com/gtm.js?id=GTM-N5G6ZXP2";
+          d.head.appendChild(script);
+        }
+
+        events.forEach(function (eventName) {
+          w.addEventListener(eventName, loadGtm, { once: true, passive: true });
+        });
+
+        w.addEventListener("load", function () {
+          if ("requestIdleCallback" in w) {
+            w.requestIdleCallback(loadGtm, { timeout: 3000 });
+          } else {
+            w.setTimeout(loadGtm, 2000);
+          }
+        }, { once: true });
+      })(window, document);
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ali's Barber Shop | Best Fades &amp; Men's Grooming in Pinellas Park, FL</title>
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <link rel="preload" as="image" href="/hero-barber.jpg">
-    <link rel="preconnect" href="https://api.alisbarbershop.com">
+    <link rel="preconnect" href="https://api.alisbarbershop.com" crossorigin="anonymous">
     <link rel="dns-prefetch" href="https://api.alisbarbershop.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

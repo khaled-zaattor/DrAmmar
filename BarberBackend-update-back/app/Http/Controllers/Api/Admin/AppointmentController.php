@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateAppointmentRequest;
 use App\Http\Resources\AppointmentResource;
 use App\Models\Appointment;
 use App\Services\AppointmentService;
+use App\Services\ClientVisitCountService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,7 +17,8 @@ class AppointmentController extends Controller
     use ResolvesAuthBarber;
 
     public function __construct(
-        private readonly AppointmentService $appointmentService
+        private readonly AppointmentService $appointmentService,
+        private readonly ClientVisitCountService $clientVisitCountService
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -66,10 +68,25 @@ class AppointmentController extends Controller
         }
 
         $appointments = $query->paginate(15);
+        $this->clientVisitCountService->attachToAppointments($appointments->getCollection());
 
         return response()->json([
             'success' => true,
             'data'    => AppointmentResource::collection($appointments)->response()->getData(true),
+        ]);
+    }
+
+    public function syncVisitCounts(): JsonResponse
+    {
+        $result = $this->clientVisitCountService->sync();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Client visit counts updated successfully.',
+            'data' => [
+                ...$result,
+                'calculated_at' => $result['calculated_at']->toISOString(),
+            ],
         ]);
     }
 
@@ -81,6 +98,7 @@ class AppointmentController extends Controller
         }
 
         $appointment->load(['barber', 'service', 'followUps']);
+        $this->clientVisitCountService->attachToAppointments(collect([$appointment]));
 
         return response()->json([
             'success' => true,
@@ -110,6 +128,7 @@ class AppointmentController extends Controller
 
         $appointment->update($data);
         $appointment->load(['barber', 'service']);
+        $this->clientVisitCountService->attachToAppointments(collect([$appointment]));
 
         return response()->json([
             'success' => true,

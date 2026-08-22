@@ -7,6 +7,7 @@ use App\Models\BarberSchedule;
 use App\Models\BlockedSlot;
 use App\Models\BusinessHour;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AvailabilityService
 {
@@ -139,29 +140,49 @@ class AvailabilityService
         }
 
         // Check blocked slots
-        $isBlocked = BlockedSlot::where('barber_id', $barberId)
+        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
+
+        $blockedSlots = BlockedSlot::where('barber_id', $barberId)
             ->where('blocked_date', $date)
-            ->where(function ($query) use ($slotStart, $slotEnd, $date) {
+            ->where(function ($query) use ($slotStart, $slotEnd, $date, $isSqlite) {
+                if ($isSqlite) {
+                    $query->whereRaw('time(start_time) < time(?)', [$slotEnd->format('H:i:s')])
+                        ->whereRaw('time(end_time) > time(?)', [$slotStart->format('H:i:s')]);
+
+                    return;
+                }
+
                 $query->whereRaw('TIMESTAMP(?, start_time) < ?', [$date, $slotEnd->format('H:i:s')])
                       ->whereRaw('TIMESTAMP(?, end_time) > ?', [$date, $slotStart->format('H:i:s')]);
-            })
-            ->exists();
+            });
+
+        $isBlocked = $blockedSlots->exists();
 
         if ($isBlocked) {
             return false;
         }
 
         // Check existing appointments
-        $isBooked = Appointment::where('barber_id', $barberId)
+        $appointments = Appointment::where('barber_id', $barberId)
             ->where('appointment_date', $date)
             ->whereNotIn('status', ['cancelled', 'no_show'])
-            ->where(function ($query) use ($slotStart, $slotEnd) {
+            ->where(function ($query) use ($slotStart, $slotEnd, $isSqlite) {
+                if ($isSqlite) {
+                    $query->whereRaw(
+                        "time(appointment_time, '+' || duration_minutes || ' minutes') > time(?) AND time(appointment_time) < time(?)",
+                        [$slotStart->format('H:i:s'), $slotEnd->format('H:i:s')]
+                    );
+
+                    return;
+                }
+
                 $query->whereRaw(
                     "ADDTIME(appointment_time, SEC_TO_TIME(duration_minutes * 60)) > ? AND appointment_time < ?",
                     [$slotStart->format('H:i:s'), $slotEnd->format('H:i:s')]
                 );
-            })
-            ->exists();
+            });
+
+        $isBooked = $appointments->exists();
 
         return !$isBooked;
     }
