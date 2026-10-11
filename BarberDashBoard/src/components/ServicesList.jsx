@@ -129,7 +129,7 @@ const ServicesList = () => {
                     </td>
                     <td>
                       <span style={s.durationTag}>
-                        {service.duration_minutes ? `${service.duration_minutes} min` : '—'}
+                        {service.is_addon ? 'Add-on · No time reserved' : service.duration_minutes ? `${service.duration_minutes} min` : '—'}
                       </span>
                     </td>
                     <td style={{ fontWeight: 600, color: '#276749' }}>

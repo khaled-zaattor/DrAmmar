@@ -11,13 +11,21 @@ class StoreServiceRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->boolean('is_addon')) {
+            $this->merge(['duration_minutes' => 0]);
+        }
+    }
+
     public function rules(): array
     {
         return [
             'name'             => ['required', 'string', 'max:255'],
             'description'      => ['nullable', 'string'],
             'price'            => ['required', 'numeric', 'min:0'],
-            'duration_minutes' => ['required', 'integer', 'min:5', 'max:480'],
+            'duration_minutes' => ['required', 'integer', $this->boolean('is_addon') ? 'min:0' : 'min:5', 'max:480'],
+            'is_addon'         => ['sometimes', 'boolean'],
             'image'            => ['nullable', 'image', 'max:2048'],
             'is_active'        => ['boolean'],
             'booking_count'    => ['sometimes', 'integer', 'min:0'],

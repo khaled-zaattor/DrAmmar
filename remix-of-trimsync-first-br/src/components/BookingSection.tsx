@@ -3,11 +3,20 @@ import { ChevronLeft, ChevronRight, CheckCircle, Calendar, Clock, User, Scissors
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { api, type Service, type Barber, type AppointmentResponse, type ServiceCategory } from "@/lib/api";
+import { formatTime } from "@/lib/time";
+import InstallAppCard from "@/components/InstallAppCard";
 
 const getDaysInMonth = (year: number, month: number) =>
   new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year: number, month: number) =>
   new Date(year, month, 1).getDay();
+
+// Google Ads expects phone numbers in E.164; mirrors the backend's ClientIdentifierNormalizer.
+const toE164 = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+  if (!phone.trim().startsWith("+") && digits.length === 10) return `+1${digits}`;
+  return `+${digits}`;
+};
 
 const inputCls =
   "font-body text-base py-3 px-4 bg-transparent border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/40 focus:border-accent focus:outline-none transition-colors w-full";
@@ -69,7 +78,7 @@ const ConfirmationScreen = ({
                   </p>
                 ))}
                 <p className="font-body text-primary-foreground/50 text-xs">
-                  ${booking.total_price} · {booking.duration_minutes} min
+                  ${booking.total_price} · {booking.duration_minutes === 0 ? "No time reserved" : `${booking.duration_minutes} min`}
                 </p>
               </div>
             </div>
@@ -84,7 +93,7 @@ const ConfirmationScreen = ({
               <Clock size={16} className="text-accent mt-0.5 shrink-0" />
               <div>
                 <p className="font-body text-primary-foreground/40 text-xs uppercase tracking-widest">Time · Barber</p>
-                <p className="font-body text-primary-foreground text-sm mt-0.5">{booking.appointment_time}</p>
+                <p className="font-body text-primary-foreground text-sm mt-0.5">{formatTime(booking.appointment_time)}</p>
                 <p className="font-body text-primary-foreground/50 text-xs">{booking.barber.name}</p>
               </div>
             </div>
@@ -94,6 +103,8 @@ const ConfirmationScreen = ({
         <p className="font-body text-primary-foreground/40 text-xs mt-6">
           A confirmation has been sent to {booking.customer_email}
         </p>
+
+        <InstallAppCard />
 
         <button
           onClick={onReset}
@@ -161,7 +172,7 @@ const BookingSection = forwardRef<BookingSectionHandle, {
     return () => clearTimeout(t);
   }, [selectedServices.length]);
 
-  const totalDuration = selectedServices.reduce((sum, s) => sum + (s.duration_minutes ?? 0), 0);
+  const totalDuration = selectedServices.reduce((sum, s) => sum + (s.is_addon ? 0 : (s.duration_minutes ?? 0)), 0);
   const totalPrice    = selectedServices.reduce((sum, s) => sum + Number(s.price ?? 0), 0);
 
   const barberRef = useRef<HTMLDivElement>(null);
@@ -207,11 +218,16 @@ const BookingSection = forwardRef<BookingSectionHandle, {
     (rawHours ?? []).filter((h) => h.is_closed).map((h) => h.day_of_week)
   );
 
-  const { data: rawServices, isLoading: servicesLoading, error: servicesError } = useQuery({
+  const {
+    data: rawServices,
+    isLoading: servicesLoading,
+    isFetching: servicesFetching,
+    error: servicesError,
+    refetch: refetchServices,
+  } = useQuery({
     queryKey: ["services"],
     queryFn: () => api.getServices(),
     staleTime: 5 * 60 * 1000,
-    retry: 1,
   });
   const services: Service[] = Array.isArray(rawServices) ? rawServices : [];
 
@@ -245,11 +261,16 @@ const BookingSection = forwardRef<BookingSectionHandle, {
     }
   }, [confirmedBooking]);
 
-  const { data: rawBarbers, isLoading: barbersLoading, error: barbersError } = useQuery({
+  const {
+    data: rawBarbers,
+    isLoading: barbersLoading,
+    isFetching: barbersFetching,
+    error: barbersError,
+    refetch: refetchBarbers,
+  } = useQuery({
     queryKey: ["barbers"],
     queryFn: () => api.getBarbers(),
     staleTime: 5 * 60 * 1000,
-    retry: 1,
   });
   const allBarbers: Barber[] = Array.isArray(rawBarbers) ? rawBarbers : [];
 
@@ -271,7 +292,7 @@ const BookingSection = forwardRef<BookingSectionHandle, {
     error: availabilityError,
   } = useQuery({
     queryKey: ["availability", selectedBarber?.id, selectedDate, totalDuration],
-    queryFn: () => api.getAvailability(selectedBarber!.id, selectedDate!, totalDuration || undefined),
+    queryFn: () => api.getAvailability(selectedBarber!.id, selectedDate!, totalDuration),
     enabled: !!selectedBarber && !!selectedDate,
     staleTime: 30 * 1000,
     retry: 1,
@@ -297,7 +318,20 @@ const BookingSection = forwardRef<BookingSectionHandle, {
 
   const bookMutation = useMutation({
     mutationFn: api.bookAppointment,
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
+      // GTM event for Google Ads: builds the "booked customers" audience that
+      // campaigns exclude, and sends user_data for Enhanced Conversions.
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "booking_completed",
+        transaction_id: res.data.booking_reference,
+        value: Number(res.data.total_price),
+        currency: "USD",
+        user_data: {
+          email: variables.customer_email.toLowerCase(),
+          phone_number: toE164(variables.customer_phone),
+        },
+      });
       setConfirmedBooking(res.data);
     },
     onError: (err: Error) => {
@@ -486,9 +520,19 @@ const BookingSection = forwardRef<BookingSectionHandle, {
               ))}
             </div>
           ) : servicesError ? (
-            <p className="mt-3 font-body text-red-400 text-sm">
-              Failed to load services: {(servicesError as Error).message}
-            </p>
+            <div className="mt-3">
+              <p className="font-body text-red-400 text-sm">
+                Failed to load services: {(servicesError as Error).message}
+              </p>
+              <button
+                type="button"
+                onClick={() => refetchServices()}
+                disabled={servicesFetching}
+                className="mt-2 font-body text-sm underline text-primary-foreground/70 hover:text-primary-foreground disabled:opacity-50"
+              >
+                {servicesFetching ? "Retrying…" : "Try again"}
+              </button>
+            </div>
           ) : browsedServices.length === 0 ? (
             <p className="mt-6 font-body text-primary-foreground/40 text-sm text-center py-8">
               No services found{searchQuery ? ` for "${searchQuery}"` : ""}.
@@ -575,7 +619,7 @@ const BookingSection = forwardRef<BookingSectionHandle, {
                       {s.duration_minutes != null && (
                         <div className="flex items-center gap-1.5 text-primary-foreground/50">
                           <Clock size={11} aria-hidden="true" />
-                          <span className="font-body text-xs">{s.duration_minutes} mins</span>
+                          <span className="font-body text-xs">{s.is_addon ? "Add-on · No time reserved" : `${s.duration_minutes} mins`}</span>
                         </div>
                       )}
 
@@ -612,7 +656,7 @@ const BookingSection = forwardRef<BookingSectionHandle, {
                 ))}
               </div>
               <div className="font-body text-xs text-primary-foreground/60 text-right shrink-0">
-                <span>{totalDuration} min</span>
+                <span>{totalDuration === 0 ? "No time reserved" : `${totalDuration} min`}</span>
                 <span className="ml-3 text-accent">${totalPrice.toFixed(2)}</span>
               </div>
             </div>
@@ -633,9 +677,19 @@ const BookingSection = forwardRef<BookingSectionHandle, {
                 ))}
               </div>
             ) : barbersError ? (
-              <p className="mt-3 font-body text-red-400 text-sm">
-                Failed to load barbers: {(barbersError as Error).message}
-              </p>
+              <div className="mt-3">
+                <p className="font-body text-red-400 text-sm">
+                  Failed to load barbers: {(barbersError as Error).message}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => refetchBarbers()}
+                  disabled={barbersFetching}
+                  className="mt-2 font-body text-sm underline text-primary-foreground/70 hover:text-primary-foreground disabled:opacity-50"
+                >
+                  {barbersFetching ? "Retrying…" : "Try again"}
+                </button>
+              </div>
             ) : barbers.length === 0 ? (
               <p className="mt-3 font-body text-primary-foreground/40 text-sm">
                 No barbers offer all selected services. Try removing a service or selecting a different combination.
@@ -786,7 +840,7 @@ const BookingSection = forwardRef<BookingSectionHandle, {
                         : "border-primary-foreground/20 text-primary-foreground/70 hover:border-primary-foreground/40"
                     }`}
                   >
-                    {t}
+                    {formatTime(t)}
                   </button>
                 ))}
               </div>
@@ -891,7 +945,7 @@ const BookingSection = forwardRef<BookingSectionHandle, {
               {bookMutation.isPending ? "Booking…" : "Confirm Appointment →"}
             </button>
             <p className="font-body text-primary-foreground/40 text-xs text-center mt-3">
-              {selectedServices.map((s) => s.name).join(", ")} with {selectedBarber?.name} — {monthName} {selectedDay}, {currentYear} at {selectedTime} · {totalDuration} min · ${totalPrice.toFixed(2)}
+              {selectedServices.map((s) => s.name).join(", ")} with {selectedBarber?.name} — {monthName} {selectedDay}, {currentYear} at {selectedTime ? formatTime(selectedTime) : ''} · {totalDuration === 0 ? "No time reserved" : `${totalDuration} min`} · ${totalPrice.toFixed(2)}
             </p>
           </div>
         )}

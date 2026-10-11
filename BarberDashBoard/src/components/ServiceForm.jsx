@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import api from '../api/axios';
 import { extractData } from '../utils/helpers';
 
-const EMPTY = { name: '', duration_minutes: '', price: '', description: '', is_active: true, booking_count: '0', category_id: '' };
+const EMPTY = { name: '', duration_minutes: '', price: '', description: '', is_active: true, is_addon: false, booking_count: '0', category_id: '' };
 
 const ServiceForm = ({ service, onClose, onSaved }) => {
   const [form,   setForm]   = useState(EMPTY);
@@ -29,6 +29,7 @@ const ServiceForm = ({ service, onClose, onSaved }) => {
         price:            service.price            != null ? String(service.price) : '',
         description:      service.description      || '',
         is_active:        service.is_active !== undefined ? service.is_active : true,
+        is_addon:         Boolean(service.is_addon),
         booking_count:    service.booking_count != null ? String(service.booking_count) : '0',
         category_id:      service.category_id != null ? String(service.category_id) : '',
       });
@@ -83,8 +84,8 @@ const ServiceForm = ({ service, onClose, onSaved }) => {
   const validate = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = 'Name is required';
-    if (!form.duration_minutes || isNaN(form.duration_minutes) || Number(form.duration_minutes) <= 0)
-      errs.duration_minutes = 'Valid duration (minutes) is required';
+    if (!form.is_addon && (!form.duration_minutes || !Number.isInteger(Number(form.duration_minutes)) || Number(form.duration_minutes) < 5 || Number(form.duration_minutes) > 480))
+      errs.duration_minutes = 'Duration must be between 5 and 480 minutes';
     if (form.price === '' || isNaN(form.price) || Number(form.price) < 0)
       errs.price = 'Valid price is required';
     return errs;
@@ -100,7 +101,8 @@ const ServiceForm = ({ service, onClose, onSaved }) => {
     try {
       const fd = new FormData();
       fd.append('name',             form.name);
-      fd.append('duration_minutes', Number(form.duration_minutes));
+      fd.append('duration_minutes', form.is_addon ? 0 : Number(form.duration_minutes));
+      fd.append('is_addon', form.is_addon ? '1' : '0');
       fd.append('price',            Number(form.price));
       fd.append('description',      form.description);
       fd.append('is_active',        form.is_active ? '1' : '0');
@@ -232,12 +234,14 @@ const ServiceForm = ({ service, onClose, onSaved }) => {
             {/* Duration + Price */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div className="form-group">
-                <label className="form-label">Duration (minutes) *</label>
+                <label className="form-label">Duration (minutes){form.is_addon ? '' : ' *'}</label>
                 <input
                   type="number"
-                  min="1"
+                  min={form.is_addon ? '0' : '5'}
+                  max="480"
+                  disabled={form.is_addon}
                   className="form-input"
-                  value={form.duration_minutes}
+                  value={form.is_addon ? '0' : form.duration_minutes}
                   onChange={(e) => set('duration_minutes', e.target.value)}
                   placeholder="30"
                 />
@@ -257,6 +261,21 @@ const ServiceForm = ({ service, onClose, onSaved }) => {
                 />
                 {errors.price && <p style={s.err}>{errors.price}</p>}
               </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-checkbox">
+                <input
+                  type="checkbox"
+                  checked={form.is_addon}
+                  onChange={(e) => set('is_addon', e.target.checked)}
+                />
+                Add-on service — no time reserved
+              </label>
+              <p style={{ fontSize: 12, color: '#64748b', margin: '8px 0 0' }}>
+                Customers still choose a barber, date and time. Can be booked alone or with other services, including alongside existing appointments.
+              </p>
+              {errors.is_addon && <p style={s.err}>{errors.is_addon}</p>}
             </div>
 
             {/* Description */}

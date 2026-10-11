@@ -1,11 +1,17 @@
 import { useEffect } from "react";
 
+// Note: this page is only reached in development now. In production Apache
+// serves the prerendered /404.html with a real HTTP 404 status — previously
+// every unknown URL rendered this component behind an HTTP 200, which is a
+// soft 404 across the entire URL space.
 const NotFound = () => {
-  const pathname = window.location.pathname;
-
   useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", pathname);
-  }, [pathname]);
+    // Read inside the effect so the component can render during prerendering.
+    console.error(
+      "404 Error: User attempted to access non-existent route:",
+      window.location.pathname
+    );
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted">

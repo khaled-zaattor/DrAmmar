@@ -6,6 +6,8 @@ import {
   getStatusStyle, formatDate, formatTime, formatCurrency,
   getApptDate, getApptTime,
 } from '../utils/helpers';
+import AppointmentServices, { getAppointmentTotal } from './AppointmentServices';
+import './appointments.css';
 import FollowUpStatus from './FollowUpStatus';
 
 const STATUSES = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'];
@@ -13,7 +15,7 @@ const STATUSES = ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'];
 const Field = ({ label, value }) => (
   <div style={f.field}>
     <div style={f.fieldLabel}>{label}</div>
-    <div style={f.fieldValue}>{value || '—'}</div>
+    <div style={f.fieldValue}>{value ?? '—'}</div>
   </div>
 );
 
@@ -72,13 +74,15 @@ const AppointmentForm = () => {
 
   if (!appointment) return null;
 
+  const duration = getAppointmentTotal(appointment, 'duration_minutes', 'duration_snapshot', 'duration_minutes');
+  const totalPrice = getAppointmentTotal(appointment, 'total_price', 'price_snapshot', 'price');
   const st = getStatusStyle(appointment.status);
   const apptDate = getApptDate(appointment);
   const apptTime = getApptTime(appointment);
   const followUps = appointment.follow_ups || appointment.followUps || [];
 
   return (
-    <div style={f.page}>
+    <div className="appointment-detail-page" style={f.page}>
       {/* ── Back + Header ─────────────────────── */}
       <div className="page-header">
         <div>
@@ -119,12 +123,12 @@ const AppointmentForm = () => {
             <Field label="Date"         value={formatDate(apptDate)} />
             <Field label="Time"         value={formatTime(apptTime)} />
             <Field label="Barber"       value={appointment.barber?.name || appointment.barber_name} />
-            <Field label="Service"      value={appointment.service?.name || appointment.service_name} />
-            {appointment.service?.duration_minutes && (
-              <Field label="Duration" value={`${appointment.service.duration_minutes} min`} />
+            <Field label="Services" value={<AppointmentServices appointment={appointment} />} />
+            {duration !== null && (
+              <Field label="Total duration" value={duration === 0 ? 'No time reserved' : `${duration} min`} />
             )}
-            {appointment.service?.price && (
-              <Field label="Price" value={formatCurrency(appointment.service.price)} />
+            {totalPrice !== null && (
+              <Field label="Total price" value={formatCurrency(totalPrice)} />
             )}
           </div>
 
@@ -144,8 +148,9 @@ const AppointmentForm = () => {
             <div style={f.sectionTitle}>✏️ Update Appointment</div>
             <form onSubmit={handleSave}>
               <div className="form-group">
-                <label className="form-label">Status</label>
+                <label className="form-label" htmlFor="appointment-status">Status</label>
                 <select
+                  id="appointment-status"
                   className="form-select"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
@@ -159,8 +164,9 @@ const AppointmentForm = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Notes</label>
+                <label className="form-label" htmlFor="appointment-notes">Notes</label>
                 <textarea
+                  id="appointment-notes"
                   className="form-textarea"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -203,12 +209,12 @@ const f = {
   fieldLabel: {
     fontSize: 11,
     fontWeight: 600,
-    color: '#a0aec0',
+    color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
     marginBottom: 3,
   },
-  fieldValue: { fontSize: 14, color: '#2d3748' },
+  fieldValue: { fontSize: 14, color: '#2d3748', overflowWrap: 'anywhere' },
 };
 
 export default AppointmentForm;

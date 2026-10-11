@@ -35,8 +35,10 @@
         <div class="section">
             <h3>Customer</h3>
             <div class="row"><span class="label">Name</span><span class="value">{{ $appointment->customer_name }}</span></div>
-            <div class="row"><span class="label">Email</span><span class="value">{{ $appointment->customer_email }}</span></div>
-            <div class="row"><span class="label">Phone</span><span class="value">{{ $appointment->customer_phone }}</span></div>
+            @if ($showCustomerContact)
+                <div class="row"><span class="label">Email</span><span class="value">{{ $appointment->customer_email }}</span></div>
+                <div class="row"><span class="label">Phone</span><span class="value">{{ $appointment->customer_phone }}</span></div>
+            @endif
         </div>
 
         <div class="section">

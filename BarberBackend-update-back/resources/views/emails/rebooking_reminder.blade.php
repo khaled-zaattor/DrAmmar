@@ -24,14 +24,15 @@
         <p>Your barber <strong>{{ $appointment->barber->name ?? 'our team' }}</strong> is ready to take great care of you again!</p>
 
         <div class="cta">
-            <a href="{{ env('FRONTEND_URL', 'http://localhost:8080') }}/booking" class="btn">Book Your Next Appointment</a>
+            <a href="{{ rtrim(config('app.frontend_url'), '/') }}/#booking" class="btn">Book Your Next Appointment</a>
         </div>
 
         <p>We miss you and hope to see you soon!</p>
     </div>
     <div class="footer">
         <p>{{ config('app.name') }} &mdash; Looking forward to your next visit!</p>
-        <p>If you no longer wish to receive these reminders, please contact us.</p>
+        <p>4201 62nd North Unit 9, Pinellas Park, FL 33781 &middot; 813-895-9229</p>
+        <p>Don't want these reminders? Reply with "unsubscribe" and we'll stop sending them.</p>
     </div>
 </body>
 </html>

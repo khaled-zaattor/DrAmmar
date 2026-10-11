@@ -8,7 +8,12 @@ const JSON_HEADERS: HeadersInit = {
 };
 
 function authHeaders(): HeadersInit {
-  const token = localStorage.getItem("auth_token");
+  // Guarded so this module can be imported during prerendering, where there is
+  // no localStorage. These calls only ever run in a browser anyway.
+  const token =
+    typeof localStorage === "undefined"
+      ? null
+      : localStorage.getItem("auth_token");
   return token
     ? { ...JSON_HEADERS, Authorization: `Bearer ${token}` }
     : JSON_HEADERS;
@@ -54,6 +59,7 @@ export interface Service {
   name: string;
   price?: string | number;
   duration_minutes?: number;
+  is_addon?: boolean;
   description?: string;
   image?: string | null;
   image_url?: string | null;
@@ -76,6 +82,7 @@ export interface TopService {
   description?: string | null;
   price: number;
   duration_minutes: number;
+  is_addon?: boolean;
   booking_count: number;
   image_url?: string | null;
   is_active: boolean;
@@ -144,14 +151,37 @@ export interface User {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// A cold API response takes a few seconds on wifi and considerably longer on a
+// weak mobile signal, so the budget follows the connection the phone reports.
+const TIMEOUT_MS = 15000;
+const SLOW_CONNECTION_TIMEOUT_MS = 25000;
+
+function requestTimeout(): number {
+  if (typeof navigator === "undefined") return TIMEOUT_MS;
+  const connection = (
+    navigator as Navigator & { connection?: { effectiveType?: string } }
+  ).connection;
+  const type = connection?.effectiveType;
+  return type === "2g" || type === "slow-2g"
+    ? SLOW_CONNECTION_TIMEOUT_MS
+    : TIMEOUT_MS;
+}
+
 function fetchWithTimeout(
   input: RequestInfo | URL,
   init: RequestInit = {},
-  timeoutMs = 6000
+  timeoutMs = requestTimeout()
 ): Promise<Response> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  return fetch(input, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(timer));
+  return fetch(input, { ...init, signal: ctrl.signal })
+    .catch((error) => {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new Error("the connection is too slow to reach the server");
+      }
+      throw error;
+    })
+    .finally(() => clearTimeout(timer));
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
@@ -195,7 +225,7 @@ export const api = {
       barber_id: String(barberId),
       date,
     });
-    if (duration) params.append('duration', String(duration));
+    if (duration !== undefined) params.append('duration', String(duration));
     return fetchWithTimeout(`${BASE_URL}/availability?${params}`, {
       headers: JSON_HEADERS,
     })

@@ -20,7 +20,7 @@ class AvailabilityController extends Controller
      */
     public function index(AvailabilityRequest $request): JsonResponse
     {
-        $duration = (int) $request->input('duration', 0);
+        $duration = $request->filled('duration') ? (int) $request->input('duration') : null;
 
         $slots = $this->availabilityService->getAvailableSlots(
             (int) $request->barber_id,

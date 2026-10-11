@@ -1,0 +1,103 @@
+# ── Ali's Barber Shop — static site ──────────────────────────────────────────
+# Every published URL is a real file or a prerendered directory containing
+# index.html. There is deliberately NO SPA catch-all: the old
+# "RewriteRule . /index.html" served the homepage for every unknown URL behind
+# an HTTP 200, which made the entire URL space a soft 404 as far as Google was
+# concerned. Anything not published is now a real 404.
+
+Options -MultiViews
+DirectoryIndex index.html
+ErrorDocument 404 /404.html
+
+# /location used to be a JS window.location.replace() rendered behind an
+# HTTP 200, so crawlers saw an empty page and no redirect at all. This is a real
+# permanent redirect.
+#
+# Deliberately mod_alias and not RewriteRule: the target contains "%2F", and in a
+# RewriteRule substitution "%2" would be parsed as a backreference to the last
+# RewriteCond. RedirectMatch does no % interpolation, so the URL survives intact.
+<IfModule mod_alias.c>
+  RedirectMatch 301 ^/location/?$ https://www.google.com/maps/place/Ali's+Barbershop/@27.8286777,-82.6982536,16z/data=!4m10!1m2!2m1!1sAli's+Barbershop,+4201+62nd+North+Unit+9,+Pinellas+Park,+FL+33781!3m6!1s0x88c2e5e61c59b849:0xd1899ae87c607955!8m2!3d27.8288039!4d-82.6914737!16s%2Fg%2F11xkrdhb2h?hl=en-US&entry=ttu
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # No http → https rule here, on purpose. Hostinger's CDN (Server: hcdn)
+  # already redirects http to https at the edge, before a request reaches this
+  # file. Repeating it here is redundant at best, and if the CDN reaches the
+  # origin over plain http without an X-Forwarded-Proto header it becomes an
+  # infinite redirect loop that takes the whole site down.
+
+  # 2 ── Canonical host. One document per URL; www and apex both served the full
+  #      site with a 200, which is duplicate content.
+  RewriteCond %{HTTP_HOST} !^alisbarbershop\.com$ [NC]
+  RewriteRule ^(.*)$ https://alisbarbershop.com/$1 [R=301,L,QSA]
+
+  # 3 ── Trailing slash is canonical for content URLs. mod_dir's DirectorySlash
+  #      would also do this, but behind the proxy it can emit the wrong scheme,
+  #      so it is turned off below and handled explicitly here.
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteCond %{REQUEST_URI} !/$
+  RewriteRule ^(.*)$ https://alisbarbershop.com/$1/ [R=301,L,QSA]
+
+  # 4 ── ...and strip a stray trailing slash off a real file
+  #      (/robots.txt/ → /robots.txt).
+  RewriteCond %{REQUEST_URI} ^/(.+)/$
+  RewriteCond %{DOCUMENT_ROOT}/%1 -f
+  RewriteRule ^(.+)/$ https://alisbarbershop.com/$1 [R=301,L]
+</IfModule>
+
+# Intentional: rule 3 above owns slash canonicalization.
+<IfModule mod_dir.c>
+  DirectorySlash Off
+</IfModule>
+
+# Each page now carries ~30 KB of inlined critical CSS, so compression matters
+# more than it did when there was only one HTML document.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml \
+    application/javascript application/json application/xml \
+    application/rss+xml application/manifest+json image/svg+xml
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Everything under /assets/ carries a content hash in its file name, so a
+  # given URL never changes. Cache it as long as the browser will.
+  SetEnvIf Request_URI "^/assets/" IMMUTABLE_ASSET
+
+  # Images in /public are not hashed — a week, revalidated in the background.
+  <FilesMatch "\.(jpe?g|png|webp|avif|svg|ico|woff2?)$">
+    Header set Cache-Control "public, max-age=604800, stale-while-revalidate=86400"
+  </FilesMatch>
+
+  # Re-asserted after the FilesMatch block so hashed images under /assets/ get
+  # the immutable policy rather than the one-week one. mod_headers applies
+  # FilesMatch blocks before unconditional directives in the same scope.
+  Header set Cache-Control "public, max-age=31536000, immutable" env=IMMUTABLE_ASSET
+
+  # Every .html is the map to this build's hashed chunk names. Serving a cached
+  # copy after a deploy makes the browser request chunks the deploy deleted,
+  # which is what "Failed to fetch dynamically imported module" means.
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "^(manifest\.webmanifest|sw\.js)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "^(sitemap\.xml|robots\.txt|llms\.txt)$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always unset X-Powered-By
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType application/manifest+json .webmanifest
+  AddType image/webp .webp
+  AddType image/avif .avif
+  AddCharset UTF-8 .html .css .js .json .xml .txt
+</IfModule>

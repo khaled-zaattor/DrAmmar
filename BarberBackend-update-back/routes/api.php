@@ -112,6 +112,9 @@ Route::middleware('auth:sanctum')->group(function () {
                 // Blocked slots: monthly report + bulk delete past
                 Route::get('blocked-slots/monthly-report',     [BlockedSlotController::class, 'monthlyReport']);
                 Route::delete('blocked-slots/bulk-delete-old', [BlockedSlotController::class, 'bulkDeleteOld']);
+
+                // Google Ads Customer Match list (exclude existing clients from ads)
+                Route::get('customers/export', [Admin\CustomerExportController::class, 'export']);
             });
         });
 

@@ -1,42 +1,142 @@
-import logo from "@/assets/footer-logo.png";
+import { BUSINESS, addressLine } from "@/data/business";
+import { SERVICE_PAGES } from "@/data/services";
+
+// __BUILD_YEAR__ is injected by vite.config.ts. Calling new Date().getFullYear()
+// in the render body baked the build year into the prerendered HTML, so a client
+// hydrating after New Year would compute a different value and React would warn
+// and patch the DOM.
+declare const __BUILD_YEAR__: number;
 
 const Footer = () => {
   return (
     <footer className="bg-primary section-padding pt-12 pb-28 md:py-12">
+      {/* A real sitemap in the footer. Previously the footer contained no
+          internal links at all, so every page was a dead end for a crawler. */}
+      <nav
+        aria-label="Footer"
+        className="max-w-[1400px] mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-10 border-b border-primary-foreground/10 pb-10 mb-10"
+      >
+        <div>
+          <h2 className="font-display text-primary-foreground text-sm uppercase tracking-[0.2em]">
+            Services
+          </h2>
+          <ul className="mt-4 space-y-2 list-none p-0">
+            {SERVICE_PAGES.map((s) => (
+              <li key={s.slug}>
+                <a
+                  href={`/services/${s.slug}/`}
+                  className="font-body text-primary-foreground/50 text-sm hover:text-primary-foreground transition-colors"
+                >
+                  {s.name} — ${s.price}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h2 className="font-display text-primary-foreground text-sm uppercase tracking-[0.2em]">
+            The Shop
+          </h2>
+          <ul className="mt-4 space-y-2 list-none p-0">
+            {[
+              { label: "All services & prices", href: "/services/" },
+              { label: "Meet Ali", href: "/about-ali/" },
+              { label: "Our work", href: "/gallery/" },
+              { label: "Frequently asked questions", href: "/faq/" },
+              { label: "Contact & directions", href: "/contact/" },
+            ].map((link) => (
+              <li key={link.href}>
+                <a
+                  href={link.href}
+                  className="font-body text-primary-foreground/50 text-sm hover:text-primary-foreground transition-colors"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <h2 className="font-display text-primary-foreground text-sm uppercase tracking-[0.2em]">
+            Hours
+          </h2>
+          <ul className="mt-4 space-y-2 list-none p-0 font-body text-primary-foreground/50 text-sm">
+            <li>Tue–Fri: 8:30 AM – 5:30 PM</li>
+            <li>Sat: 9:00 AM – 4:00 PM</li>
+            <li>Sun &amp; Mon: Closed</li>
+          </ul>
+          <a
+            href="/#booking"
+            className="inline-block mt-6 bg-accent text-accent-foreground font-body font-semibold text-xs uppercase tracking-widest px-5 py-3 hover:opacity-90 transition-opacity"
+          >
+            Book an appointment →
+          </a>
+        </div>
+      </nav>
+
       <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-2">
-          <img src={logo} alt="Ali's Barber Shop" className="h-32 w-32 object-contain" />
+          <img
+            src="/images/footer-logo.png"
+            alt={BUSINESS.name}
+            width={343}
+            height={476}
+            className="h-32 w-32 object-contain"
+          />
           <span className="font-display text-primary-foreground text-xl tracking-wider uppercase">
-            Ali's Barber Shop
+            {BUSINESS.name}
           </span>
         </div>
         <div className="flex flex-col items-center gap-1 text-center">
           <a
-            href="https://www.google.com/maps/place/Ali's+Barbershop/@27.8288039,-82.7676914,13z/data=!4m10!1m2!2m1!1sAli's+Barbershop,+4201+62nd+North+Unit+9,+Pinellas+Park,+FL+33781!3m6!1s0x88c2e5e61c59b849:0xd1899ae87c607955!8m2!3d27.8288039!4d-82.6914737!15sCkFBbGkncyBCYXJiZXJzaG9wLCA0MjAxIDYybmQgTm9ydGggVW5pdCA5LCBQaW5lbGxhcyBQYXJrLCBGTCAzMzc4MVpAIj5hbGkncyBiYXJiZXJzaG9wIDQyMDEgNjJuZCBub3J0aCB1bml0IDkgcGluZWxsYXMgcGFyayBmbCAzMzc4MZIBCmhhaXJfc2Fsb26aAURDaTlEUVVsUlFVTnZaRU5vZEhsalJqbHZUMnQzTVZwSFduRlNlazVUVlZaV05sUjZhRTFOYkd4eVRqSnJlVlJzUlJBQuABAPoBBAgAEDE!16s%2Fg%2F11xkrdhb2h?hl=en-US&entry=ttu&g_ep=EgoyMDI2MDUxMy4wIKXMDSoASAFQAw%3D%3D"
+            href={BUSINESS.mapsUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="font-body text-primary-foreground/50 text-sm hover:text-primary-foreground transition-colors"
           >
-            Ali's Barbershop, 4201 62nd North Unit 9, Pinellas Park, FL 33781
+            {BUSINESS.name}, {addressLine()}
           </a>
-          <a href="tel:8138959229" className="font-body text-primary-foreground/60 text-sm hover:text-primary-foreground transition-colors">
-            813-895-9229
+          <a
+            href={BUSINESS.phone.href}
+            className="font-body text-primary-foreground/60 text-sm hover:text-primary-foreground transition-colors"
+          >
+            {BUSINESS.phone.display}
           </a>
-          <a href="mailto:alisbarbershop2026@gmail.com" className="font-body text-primary-foreground/60 text-sm hover:text-primary-foreground transition-colors">
-            alisbarbershop2026@gmail.com
+          <a
+            href={`mailto:${BUSINESS.email}`}
+            className="font-body text-primary-foreground/60 text-sm hover:text-primary-foreground transition-colors"
+          >
+            {BUSINESS.email}
           </a>
           <p className="font-body text-primary-foreground/40 text-sm mt-1">
-            © {new Date().getFullYear()} Ali's Barber Shop. All rights reserved.
+            © {__BUILD_YEAR__} {BUSINESS.name}. All rights reserved.
           </p>
         </div>
         <div className="flex gap-6">
-          <a href="https://www.instagram.com/alisbarbershop2026" target="_blank" rel="noopener noreferrer" className="font-body text-primary-foreground/40 text-sm hover:text-primary-foreground transition-colors">
+          <a
+            href={BUSINESS.socials.instagram}
+            target="_blank"
+            rel="me noopener noreferrer"
+            className="font-body text-primary-foreground/40 text-sm hover:text-primary-foreground transition-colors"
+          >
             Instagram
           </a>
-          <a href="https://www.facebook.com/profile.php?id=61574278858877" target="_blank" rel="noopener noreferrer" className="font-body text-primary-foreground/40 text-sm hover:text-primary-foreground transition-colors">
+          <a
+            href={BUSINESS.socials.facebook}
+            target="_blank"
+            rel="me noopener noreferrer"
+            className="font-body text-primary-foreground/40 text-sm hover:text-primary-foreground transition-colors"
+          >
             Facebook
           </a>
-          <a href="https://www.tiktok.com/@alis.barber.shop" target="_blank" rel="noopener noreferrer" className="font-body text-primary-foreground/40 text-sm hover:text-primary-foreground transition-colors">
+          <a
+            href={BUSINESS.socials.tiktok}
+            target="_blank"
+            rel="me noopener noreferrer"
+            className="font-body text-primary-foreground/40 text-sm hover:text-primary-foreground transition-colors"
+          >
             TikTok
           </a>
         </div>

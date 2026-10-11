@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiFilter, FiRefreshCw } from 'react-icons/fi';
 import api from '../api/axios';
+import AppointmentServices from './AppointmentServices';
+import './appointments.css';
 import { useAuth } from '../context/AuthContext';
 import {
   extractData, getStatusStyle, formatDate, formatTime,
@@ -30,8 +32,10 @@ const AppointmentsList = () => {
   const [barbers,      setBarbers]      = useState([]);
   const [services,     setServices]     = useState([]);
   const [loading,      setLoading]      = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [deleting,     setDeleting]     = useState(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [exportingCustomers, setExportingCustomers] = useState(false);
   const [syncingVisits, setSyncingVisits] = useState(false);
   const [lastVisitUpdate, setLastVisitUpdate] = useState(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -45,6 +49,7 @@ const AppointmentsList = () => {
   // ── Fetch ───────────────────────────────────────────────
   const fetchAppointments = useCallback(async (filterOverride = null) => {
     setLoading(true);
+    setLoadError(false);
     try {
       const activeFilters = filterOverride || filters;
       const params = {};
@@ -74,6 +79,7 @@ const AppointmentsList = () => {
         ));
       }
     } catch {
+      setLoadError(true);
       toast.error('Failed to load appointments');
     } finally {
       setLoading(false);
@@ -132,6 +138,27 @@ const AppointmentsList = () => {
     }
   };
 
+  // ── Export customers for Google Ads Customer Match (admin only) ──
+  const handleExportCustomers = async () => {
+    setExportingCustomers(true);
+    try {
+      const res = await api.get('/api/admin/customers/export', { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `customer-match-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Customer list downloaded. Upload it in Google Ads → Audience manager.');
+    } catch {
+      toast.error('Failed to export customers');
+    } finally {
+      setExportingCustomers(false);
+    }
+  };
+
   // ── Delete ──────────────────────────────────────────────
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this appointment? This cannot be undone.')) return;
@@ -155,7 +182,7 @@ const AppointmentsList = () => {
   const hasFilters = Object.values(filters).some(Boolean);
 
   return (
-    <div>
+    <div className="appointments-page">
       <div className="page-header">
         <div>
           <h1 className="page-title">Appointments</h1>
@@ -182,6 +209,15 @@ const AppointmentsList = () => {
           )}
           {me?.role === 'admin' && (
             <button
+              className="btn btn-primary btn-sm"
+              onClick={handleExportCustomers}
+              disabled={exportingCustomers}
+            >
+              {exportingCustomers ? 'Exporting…' : 'Export customers (Google Ads)'}
+            </button>
+          )}
+          {me?.role === 'admin' && (
+            <button
               className="btn btn-danger btn-sm"
               onClick={handleBulkDeleteOld}
               disabled={bulkDeleting || syncingVisits}
@@ -203,9 +239,11 @@ const AppointmentsList = () => {
               value={filters.date}
               onChange={(e) => setFilter('date', e.target.value)}
               title="Filter by date"
+              aria-label="Filter by date"
             />
             <input
               type="text"
+              aria-label="Search name or phone"
               className="form-input"
               placeholder="Search name or phone…"
               value={filters.search}
@@ -215,6 +253,7 @@ const AppointmentsList = () => {
               className="filter-toggle-btn"
               onClick={() => setShowAdvanced((v) => !v)}
               aria-expanded={showAdvanced}
+              aria-controls="appointment-advanced-filters"
             >
               <FiFilter size={14} />
               Filters
@@ -227,11 +266,12 @@ const AppointmentsList = () => {
           </div>
 
           {/* Advanced row: extra filters (always visible on desktop, toggled on mobile) */}
-          <div className={`filter-advanced${showAdvanced ? ' open' : ''}`}>
+          <div id="appointment-advanced-filters" className={`filter-advanced${showAdvanced ? ' open' : ''}`}>
             {/* Barber dropdown: hidden for barbers (they always see only their own) */}
             {!isBarber && (
               <select
                 className="form-select"
+                aria-label="Filter by barber"
                 value={filters.barber_id}
                 onChange={(e) => setFilter('barber_id', e.target.value)}
               >
@@ -243,6 +283,7 @@ const AppointmentsList = () => {
             )}
             <select
               className="form-select"
+              aria-label="Filter by status"
               value={filters.status}
               onChange={(e) => setFilter('status', e.target.value)}
             >
@@ -256,11 +297,13 @@ const AppointmentsList = () => {
               type="email"
               className="form-input"
               placeholder="Search by email…"
+              aria-label="Search by email"
               value={filters.email}
               onChange={(e) => setFilter('email', e.target.value)}
             />
             <select
               className="form-select"
+              aria-label="Filter by service"
               value={filters.service_id}
               onChange={(e) => setFilter('service_id', e.target.value)}
             >
@@ -277,6 +320,12 @@ const AppointmentsList = () => {
           <div className="loading-container">
             <div className="loading-spinner" />
             <span>Loading appointments…</span>
+          </div>
+        ) : loadError ? (
+          <div className="empty-state" role="alert">
+            <h3>Appointments could not be loaded</h3>
+            <p>Please try again to see the latest bookings.</p>
+            <button className="btn btn-primary" onClick={() => fetchAppointments()}>Try again</button>
           </div>
         ) : appointments.length === 0 ? (
           <div className="empty-state">
@@ -295,7 +344,7 @@ const AppointmentsList = () => {
                   <th>Phone visits</th>
                   <th>Email visits</th>
                   <th>Barber</th>
-                  <th>Service</th>
+                  <th>Services</th>
                   <th>Date & Time</th>
                   <th>Status</th>
                   <th>Notes</th>
@@ -310,12 +359,14 @@ const AppointmentsList = () => {
                       <td className="col-index" style={{ color: '#a0aec0', fontSize: 12, whiteSpace: 'nowrap' }}>
                         #{appt.id}
                       </td>
-                      <td data-label="Customer">
-                        <div style={{ fontWeight: 500 }}>
-                          {appt.customer_name || appt.name || '—'}
-                        </div>
-                        <div style={{ fontSize: 12, color: '#a0aec0' }}>
-                          {appt.customer_email || appt.email || ''}
+                      <td data-label="Customer" className="appointment-customer">
+                        <div className="appointment-cell-value">
+                          <div className="appointment-customer-name">
+                            {appt.customer_name || appt.name || '—'}
+                          </div>
+                          <div className="appointment-secondary">
+                            {appt.customer_email || appt.email || ''}
+                          </div>
                         </div>
                       </td>
                       <td data-label="Phone" style={{ color: '#718096', fontSize: 13 }}>
@@ -330,12 +381,14 @@ const AppointmentsList = () => {
                       <td data-label="Barber">
                         {appt.barber?.name || appt.barber_name || '—'}
                       </td>
-                      <td data-label="Service">
-                        {appt.service?.name || appt.service_name || '—'}
+                      <td data-label="Services" className="appointment-service-cell">
+                        <AppointmentServices appointment={appt} />
                       </td>
-                      <td data-label="Date & Time" style={{ whiteSpace: 'nowrap' }}>
-                        <div style={{ fontWeight: 500 }}>{formatDate(getApptDate(appt))}</div>
-                        <div style={{ fontSize: 12, color: '#a0aec0' }}>{formatTime(getApptTime(appt))}</div>
+                      <td data-label="Date & Time" className="appointment-date">
+                        <div className="appointment-cell-value">
+                          <div style={{ fontWeight: 500 }}>{formatDate(getApptDate(appt))}</div>
+                          <div className="appointment-time">{formatTime(getApptTime(appt))}</div>
+                        </div>
                       </td>
                       <td data-label="Status">
                         <span
@@ -349,14 +402,15 @@ const AppointmentsList = () => {
                           {appt.status?.replace('_', ' ')}
                         </span>
                       </td>
-                      <td data-label="Notes" style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#718096', fontSize: 13 }}>
+                      <td data-label="Notes" className="appointment-notes">
                         {appt.notes || <span style={{ color: '#cbd5e0' }}>—</span>}
                       </td>
                       <td className="col-actions">
-                        <div style={{ display: 'flex', gap: 6 }}>
+                        <div className="appointment-row-actions">
                           <Link
                             to={`/appointments/${appt.id}/edit`}
                             className="btn btn-primary btn-sm"
+                            aria-label={`View appointment ${appt.id}`}
                           >
                             View
                           </Link>
@@ -364,8 +418,9 @@ const AppointmentsList = () => {
                             className="btn btn-danger btn-sm"
                             onClick={() => handleDelete(appt.id)}
                             disabled={deleting === appt.id}
+                            aria-label={`Delete appointment ${appt.id}`}
                           >
-                            {deleting === appt.id ? '…' : 'Del'}
+                            {deleting === appt.id ? 'Deleting…' : 'Delete'}
                           </button>
                         </div>
                       </td>

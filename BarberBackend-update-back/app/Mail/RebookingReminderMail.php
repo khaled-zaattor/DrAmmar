@@ -29,6 +29,7 @@ class RebookingReminderMail extends Mailable
     {
         return new Content(
             view: 'emails.rebooking_reminder',
+            text: 'emails.rebooking_reminder_text',
             with: [
                 'appointment' => $this->appointment,
             ],
@@ -39,7 +40,7 @@ class RebookingReminderMail extends Mailable
     {
         return new Headers(
             text: [
-                'List-Unsubscribe' => '<mailto:' . config('mail.from.address') . '?subject=Unsubscribe>',
+                'List-Unsubscribe' => '<mailto:' . config('mail.reply_to.address') . '?subject=Unsubscribe>',
             ],
         );
     }

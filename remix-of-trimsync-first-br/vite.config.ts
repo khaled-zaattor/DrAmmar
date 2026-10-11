@@ -44,7 +44,13 @@ function inlineStylesheet(): Plugin {
   };
 }
 // https://vitejs.dev/config/
-export default defineConfig(() => ({
+export default defineConfig(({ isSsrBuild }) => ({
+  build: {
+    // The SSR bundle is a throwaway intermediate consumed by
+    // scripts/prerender.mjs. Without this it would also copy all of public/ into
+    // .ssr-build, which is pure waste.
+    copyPublicDir: !isSsrBuild,
+  },
   server: {
     host: "::",
     port: 8080,
@@ -65,6 +71,12 @@ export default defineConfig(() => ({
     },
   },
   plugins: [react(), inlineStylesheet()],
+  define: {
+    // Baked at build time so the footer copyright year is identical in the
+    // prerendered HTML and on the client. Computing it in the render body meant
+    // a visitor hydrating after New Year got a hydration mismatch.
+    __BUILD_YEAR__: new Date().getFullYear(),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

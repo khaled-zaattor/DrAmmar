@@ -16,7 +16,7 @@ class AvailabilityRequest extends FormRequest
         return [
             'barber_id' => ['required', 'integer', 'exists:barbers,id'],
             'date'      => ['required', 'date', 'date_format:Y-m-d', 'after_or_equal:today'],
-            'duration'  => ['sometimes', 'nullable', 'integer', 'min:1', 'max:480'],
+            'duration'  => ['sometimes', 'nullable', 'integer', 'min:0', 'max:480'],
         ];
     }
 }

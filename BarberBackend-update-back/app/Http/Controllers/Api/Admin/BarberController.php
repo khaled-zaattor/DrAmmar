@@ -61,6 +61,7 @@ class BarberController extends Controller
             $hasApptConflict = Appointment::where('barber_id', $b->id)
                 ->where('appointment_date', $date)
                 ->whereNotIn('status', ['cancelled', 'no_show'])
+                ->where('duration_minutes', '>', 0)
                 ->where('appointment_time', '<', $endTime . ':00')
                 ->whereRaw("ADDTIME(appointment_time, SEC_TO_TIME(duration_minutes * 60)) > ?", [$startTime . ':00'])
                 ->exists();

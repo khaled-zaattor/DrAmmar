@@ -6,9 +6,11 @@ use App\Jobs\ScheduleFollowUpEmails;
 use App\Mail\BookingConfirmationMail;
 use App\Mail\NewAppointmentBarberMail;
 use App\Models\Appointment;
+use App\Models\Barber;
 use App\Models\Service;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentService
 {
@@ -17,6 +19,31 @@ class AppointmentService
     ) {}
 
     public function createAppointment(array $data): Appointment
+    {
+        $appointment = DB::transaction(function () use ($data) {
+            // Serialize bookings for this barber so concurrent timed bookings cannot overlap.
+            Barber::whereKey($data['barber_id'])->lockForUpdate()->firstOrFail();
+
+            return $this->createAppointmentRecord($data);
+        }, 3);
+
+        ScheduleFollowUpEmails::dispatch($appointment);
+        $appointment->load(['barber', 'service', 'services']);
+
+        if ($appointment->barber && $appointment->barber->email) {
+            Mail::to($appointment->barber->email)
+                ->queue(new NewAppointmentBarberMail($appointment));
+        }
+
+        if ($appointment->customer_email) {
+            Mail::to($appointment->customer_email)
+                ->queue(new BookingConfirmationMail($appointment));
+        }
+
+        return $appointment;
+    }
+
+    private function createAppointmentRecord(array $data): Appointment
     {
         $services = Service::whereIn('id', $data['service_ids'])->get()->keyBy('id');
 
@@ -27,7 +54,7 @@ class AppointmentService
             ], 422));
         }
 
-        $totalDuration = $services->sum('duration_minutes');
+        $totalDuration = $services->sum(fn (Service $service) => $service->is_addon ? 0 : $service->duration_minutes);
         $totalPrice    = $services->sum('price');
 
         $available = $this->availabilityService->isSlotAvailable(
@@ -65,26 +92,12 @@ class AppointmentService
         foreach ($services as $service) {
             $pivotData[$service->id] = [
                 'price_snapshot'    => $service->price,
-                'duration_snapshot' => $service->duration_minutes,
+                'duration_snapshot' => $service->is_addon ? 0 : $service->duration_minutes,
             ];
         }
         $appointment->services()->attach($pivotData);
 
         Service::whereIn('id', $data['service_ids'])->increment('booking_count');
-
-        ScheduleFollowUpEmails::dispatch($appointment);
-
-        $appointment->load(['barber', 'service', 'services']);
-
-        if ($appointment->barber && $appointment->barber->email) {
-            Mail::to($appointment->barber->email)
-                ->queue(new NewAppointmentBarberMail($appointment));
-        }
-
-        if ($appointment->customer_email) {
-            Mail::to($appointment->customer_email)
-                ->queue(new BookingConfirmationMail($appointment));
-        }
 
         return $appointment;
     }

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class AvailabilityService
 {
-    public function getAvailableSlots(int $barberId, string $date, int $requiredDuration = 0): array
+    public function getAvailableSlots(int $barberId, string $date, ?int $requiredDuration = null): array
     {
         $carbon = Carbon::parse($date);
         $dayOfWeek = (int) $carbon->dayOfWeek; // 0=Sunday, 6=Saturday
@@ -56,29 +56,42 @@ class AvailabilityService
 
         // Remove blocked slots
         $blockedSlots = BlockedSlot::where('barber_id', $barberId)
-            ->where('blocked_date', $date)
+            ->whereDate('blocked_date', $date)
             ->get();
 
         foreach ($blockedSlots as $blocked) {
             $blockStart = Carbon::parse($date . ' ' . $blocked->start_time);
             $blockEnd   = Carbon::parse($date . ' ' . $blocked->end_time);
 
-            $slots = array_filter($slots, function (Carbon $slot) use ($blockStart, $blockEnd) {
+            $slots = array_filter($slots, function (Carbon $slot) use ($blockStart, $blockEnd, $requiredDuration) {
+                if ($requiredDuration > 0) {
+                    return !($slot < $blockEnd && $slot->copy()->addMinutes($requiredDuration) > $blockStart);
+                }
                 return !($slot >= $blockStart && $slot < $blockEnd);
             });
         }
 
+        // An explicit zero is an add-on booking. It needs a time but no capacity.
+        // Omitted duration preserves the ordinary availability lookup.
+        if ($requiredDuration === 0) {
+            return array_values(array_map(fn (Carbon $slot) => $slot->format('H:i'), $slots));
+        }
+
         // Remove slots occupied by existing appointments
         $appointments = Appointment::where('barber_id', $barberId)
-            ->where('appointment_date', $date)
+            ->whereDate('appointment_date', $date)
             ->whereNotIn('status', ['cancelled', 'no_show'])
+            ->where('duration_minutes', '>', 0)
             ->get(['appointment_time', 'duration_minutes']);
 
         foreach ($appointments as $appointment) {
             $apptStart = Carbon::parse($date . ' ' . $appointment->appointment_time);
             $apptEnd   = $apptStart->copy()->addMinutes($appointment->duration_minutes);
 
-            $slots = array_filter($slots, function (Carbon $slot) use ($apptStart, $apptEnd) {
+            $slots = array_filter($slots, function (Carbon $slot) use ($apptStart, $apptEnd, $requiredDuration) {
+                if ($requiredDuration > 0) {
+                    return !($slot < $apptEnd && $slot->copy()->addMinutes($requiredDuration) > $apptStart);
+                }
                 return !($slot >= $apptStart && $slot < $apptEnd);
             });
         }
@@ -97,7 +110,7 @@ class AvailabilityService
         ));
     }
 
-    public function isSlotAvailable(int $barberId, string $date, string $time, int $durationMinutes): bool
+    public function isSlotAvailable(int $barberId, string $date, string $time, int $durationMinutes, ?int $excludeAppointmentId = null): bool
     {
         $carbon = Carbon::parse($date);
         $dayOfWeek = (int) $carbon->dayOfWeek;
@@ -135,7 +148,7 @@ class AvailabilityService
         $closeAt = Carbon::parse($date . ' ' . $closeTime);
 
         // Slot must be within working hours
-        if ($slotStart < $openAt || $slotEnd > $closeAt) {
+        if ($durationMinutes < 0 || $slotStart < $openAt || $slotStart >= $closeAt || $slotEnd > $closeAt) {
             return false;
         }
 
@@ -143,17 +156,18 @@ class AvailabilityService
         $isSqlite = DB::connection()->getDriverName() === 'sqlite';
 
         $blockedSlots = BlockedSlot::where('barber_id', $barberId)
-            ->where('blocked_date', $date)
-            ->where(function ($query) use ($slotStart, $slotEnd, $date, $isSqlite) {
+            ->whereDate('blocked_date', $date)
+            ->where(function ($query) use ($slotStart, $slotEnd, $durationMinutes, $isSqlite) {
+                $startOperator = $durationMinutes === 0 ? '<=' : '<';
                 if ($isSqlite) {
-                    $query->whereRaw('time(start_time) < time(?)', [$slotEnd->format('H:i:s')])
+                    $query->whereRaw("time(start_time) {$startOperator} time(?)", [$slotEnd->format('H:i:s')])
                         ->whereRaw('time(end_time) > time(?)', [$slotStart->format('H:i:s')]);
 
                     return;
                 }
 
-                $query->whereRaw('TIMESTAMP(?, start_time) < ?', [$date, $slotEnd->format('H:i:s')])
-                      ->whereRaw('TIMESTAMP(?, end_time) > ?', [$date, $slotStart->format('H:i:s')]);
+                $query->where('start_time', $startOperator, $slotEnd->format('H:i:s'))
+                      ->where('end_time', '>', $slotStart->format('H:i:s'));
             });
 
         $isBlocked = $blockedSlots->exists();
@@ -162,10 +176,15 @@ class AvailabilityService
             return false;
         }
 
+        if ($durationMinutes === 0) {
+            return true;
+        }
+
         // Check existing appointments
         $appointments = Appointment::where('barber_id', $barberId)
-            ->where('appointment_date', $date)
+            ->whereDate('appointment_date', $date)
             ->whereNotIn('status', ['cancelled', 'no_show'])
+            ->where('duration_minutes', '>', 0)
             ->where(function ($query) use ($slotStart, $slotEnd, $isSqlite) {
                 if ($isSqlite) {
                     $query->whereRaw(
@@ -181,6 +200,10 @@ class AvailabilityService
                     [$slotStart->format('H:i:s'), $slotEnd->format('H:i:s')]
                 );
             });
+
+        if ($excludeAppointmentId !== null) {
+            $appointments->where('id', '!=', $excludeAppointmentId);
+        }
 
         $isBooked = $appointments->exists();
 

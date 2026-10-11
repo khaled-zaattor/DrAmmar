@@ -32,6 +32,8 @@
     </div>
     <div class="footer">
         <p>{{ config('app.name') }} &mdash; Thank you for choosing us!</p>
+        <p>4201 62nd North Unit 9, Pinellas Park, FL 33781 &middot; 813-895-9229</p>
+        <p>Don't want these emails? Reply with "unsubscribe" and we'll stop sending them.</p>
     </div>
 </body>
 </html>

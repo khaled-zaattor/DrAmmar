@@ -1,18 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { api } from "@/lib/api";
-
-const googleReviewsUrl =
-  "https://www.google.com/maps/place/Ali's+Barbershop/@27.8288039,-82.7676914,13z/data=!4m10!1m2!2m1!1sAli's+Barbershop,+4201+62nd+North+Unit+9,+Pinellas+Park,+FL+33781!3m6!1s0x88c2e5e61c59b849:0xd1899ae87c607955!8m2!3d27.8288039!4d-82.6914737!15sCkFBbGkncyBCYXJiZXJzaG9wLCA0MjAxIDYybmQgTm9ydGggVW5pdCA5LCBQaW5lbGxhcyBQYXJrLCBGTCAzMzc4MVpAIj5hbGkncyBiYXJiZXJzaG9wIDQyMDEgNjJuZCBub3J0aCB1bml0IDkgcGluZWxsYXMgcGFyayBmbCAzMzc4MZIBCmhhaXJfc2Fsb26aAURDaTlEUVVsUlFVTnZaRU5vZEhsalJqbHZUMnQzTVZwSFduRlNlazVUVlZaV05sUjZhRTFOYkd4eVRqSnJlVlJzUlJBQuABAPoBBAgAEDE!16s%2Fg%2F11xkrdhb2h?hl=en-US&entry=ttu&g_ep=EgoyMDI2MDUxMy4wIKXMDSoASAFQAw%3D%3D";
+import { BUSINESS } from "@/data/business";
+import { FEATURED_AS_TOP_SERVICES } from "@/data/services";
 
 const HeroSection = () => {
   const scrollToBooking = () => {
     document.getElementById("booking")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Seeded from the static catalog so the price list is in the prerendered HTML
+  // and still renders if the API is unreachable. Previously an API failure left
+  // this list empty, which is how Google came to index a barber shop with no
+  // visible services or prices.
   const { data: services = [] } = useQuery({
     queryKey: ["top-booked-services"],
     queryFn: () => api.getTopBookedServices(6),
+    initialData: FEATURED_AS_TOP_SERVICES,
+    initialDataUpdatedAt: 0,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -36,11 +41,18 @@ const HeroSection = () => {
       {/* Title — spanning full width, right-aligned */}
       <div className="relative z-10 section-padding pt-32 md:pt-40">
         <div className="max-w-[1400px] mx-auto">
-          <p className="font-body text-accent text-sm uppercase tracking-widest text-right mb-4">
-            Premier Barbershop in Pinellas Park &amp; St. Petersburg, FL
+          {/* The visual wordmark is now a tagline, not the H1. "The Art of the
+              Cut" is good branding but told a search engine nothing about what
+              this business is, where it is, or what it does. The H1 below says
+              all three; the tagline keeps the look. */}
+          <p className="font-display text-accent text-2xl sm:text-3xl md:text-4xl uppercase tracking-[0.3em] text-right mb-4">
+            The Art of the Cut
           </p>
-          <h1 className="font-display text-primary-foreground text-6xl sm:text-8xl md:text-[10rem] lg:text-[12rem] leading-[0.85] tracking-tight uppercase text-right">
-            The Art<br />of the<br />Cut
+          <h1 className="font-display text-primary-foreground text-4xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.9] tracking-tight uppercase text-right">
+            Barber Shop in Pinellas Park, FL
+            <span className="block text-accent">
+              for Fades, Haircuts &amp; Beard Trims
+            </span>
           </h1>
         </div>
       </div>
@@ -50,7 +62,7 @@ const HeroSection = () => {
         <div className="max-w-[1400px] mx-auto flex justify-end">
           <div className="w-full max-w-md">
             <a
-              href={googleReviewsUrl}
+              href={BUSINESS.mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Rated 5.0 on Google. Read our reviews"

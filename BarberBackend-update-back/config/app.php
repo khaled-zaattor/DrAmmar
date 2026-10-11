@@ -54,6 +54,15 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Public customer-facing website, used for links in emails.
+    'frontend_url' => env('FRONTEND_URL') ?: 'https://alisbarbershop.com',
+
+    // Where the "Leave a Review" email button points (e.g. the Google Business review link).
+    'review_url' => env('REVIEW_URL') ?: rtrim(env('FRONTEND_URL') ?: 'https://alisbarbershop.com', '/') . '/#testimonials',
+
+    // Only this barber sees the customer's email and phone in new-appointment emails.
+    'main_barber_email' => env('MAIN_BARBER_EMAIL') ?: 'alisbarbershop2026@gmail.com',
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

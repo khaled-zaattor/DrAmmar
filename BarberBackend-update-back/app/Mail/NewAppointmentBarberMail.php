@@ -29,8 +29,13 @@ class NewAppointmentBarberMail extends Mailable implements ShouldQueue
     {
         return new Content(
             view: 'emails.new_appointment_barber',
+            text: 'emails.new_appointment_barber_text',
             with: [
                 'appointment' => $this->appointment,
+                'showCustomerContact' => strcasecmp(
+                    trim((string) $this->appointment->barber?->email),
+                    trim((string) config('app.main_barber_email'))
+                ) === 0,
             ],
         );
     }

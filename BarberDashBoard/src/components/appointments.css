@@ -1,0 +1,239 @@
+.appointments-page,
+.appointment-detail-page {
+  min-width: 0;
+}
+
+.appointment-cell-value,
+.appointment-detail-page .appt-grid > *,
+.appointment-services,
+.appointment-services li {
+  min-width: 0;
+}
+
+.appointment-customer-name {
+  font-weight: 600;
+}
+
+.appointment-secondary {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.appointment-time {
+  margin-top: 3px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.appointment-services {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.appointment-services li {
+  line-height: 1.5;
+}
+
+.appointment-addon {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #475569;
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.appointments-page .appointment-service-cell {
+  min-width: 150px;
+}
+
+.appointments-page .appointment-date {
+  white-space: nowrap;
+}
+
+.appointments-page .appointment-notes {
+  min-width: 100px;
+  max-width: 180px;
+  color: #64748b;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.appointment-row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.appointments-page .empty-state .btn {
+  margin-top: 16px;
+}
+
+.appointments-page :is(button, a.btn, input, select),
+.appointment-detail-page :is(button, a.btn, select) {
+  min-height: 44px;
+}
+
+.appointments-page :is(button, a, input, select):focus-visible,
+.appointment-detail-page :is(button, a, textarea, select):focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.appointment-detail-page .appt-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+}
+
+@media (min-width: 769px) {
+  .appointments-page table {
+    min-width: 1320px;
+  }
+
+  .appointments-page :is(th, td) {
+    padding: 12px;
+  }
+
+  .appointments-page .appointment-customer {
+    min-width: 180px;
+  }
+
+  .appointments-page td[data-label="Phone"] {
+    white-space: nowrap;
+  }
+
+  .appointments-page .appointment-notes {
+    min-width: 150px;
+  }
+
+  .appointments-page :is(th:last-child, td.col-actions) {
+    position: sticky;
+    right: 0;
+    background: #fff;
+    box-shadow: -5px 0 8px -7px #64748b;
+  }
+
+  .appointments-page th:last-child {
+    background: #f8fafc;
+  }
+}
+
+@media (max-width: 1000px) {
+  .appointment-detail-page .appt-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .appointments-page .filter-row-primary {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .appointments-page .filter-row-primary input {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .appointments-page .filter-row-primary button {
+    justify-content: center;
+  }
+
+  .appointments-page .filter-bar :is(input, select) {
+    font-size: 16px;
+  }
+
+  .appointments-page .table-wrapper {
+    padding: 12px;
+    background: #f8fafc;
+    overflow: visible;
+  }
+
+  .appointments-page .table-wrapper :is(table, tbody) {
+    display: block;
+    width: 100%;
+  }
+
+  .appointments-page .table-wrapper tbody tr {
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    border-radius: 8px;
+    box-shadow: none;
+  }
+
+  .appointments-page .table-wrapper tbody td {
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
+    align-items: start;
+    min-width: 0;
+    gap: 10px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+
+  .appointments-page .table-wrapper tbody td::before {
+    min-width: 0;
+    color: #64748b;
+  }
+
+  .appointments-page .table-wrapper td.col-index {
+    display: none;
+  }
+
+  .appointments-page .table-wrapper td.appointment-date {
+    order: -2;
+    padding-bottom: 12px !important;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  .appointments-page .appointment-time {
+    color: #1e40af;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  .appointments-page .appointment-customer-name {
+    font-size: 15px;
+  }
+
+  .appointments-page .visit-count-value {
+    justify-self: start;
+  }
+
+  .appointments-page .badge {
+    justify-self: start;
+  }
+
+  .appointments-page .table-wrapper td.col-actions {
+    display: block;
+    padding-bottom: 0 !important;
+  }
+
+  .appointments-page .appointment-row-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .appointment-detail-page .card {
+    padding: 20px 16px !important;
+  }
+
+  .appointment-detail-page .form-select,
+  .appointment-detail-page .form-textarea {
+    font-size: 16px;
+  }
+}

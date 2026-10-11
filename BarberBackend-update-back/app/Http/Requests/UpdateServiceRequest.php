@@ -11,13 +11,23 @@ class UpdateServiceRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->boolean('is_addon', (bool) $this->route('service')?->is_addon)) {
+            $this->merge(['duration_minutes' => 0]);
+        } elseif ($this->has('is_addon') && !$this->has('duration_minutes')) {
+            $this->merge(['duration_minutes' => $this->route('service')?->duration_minutes]);
+        }
+    }
+
     public function rules(): array
     {
         return [
             'name'             => ['sometimes', 'required', 'string', 'max:255'],
             'description'      => ['sometimes', 'nullable', 'string'],
             'price'            => ['sometimes', 'required', 'numeric', 'min:0'],
-            'duration_minutes' => ['sometimes', 'required', 'integer', 'min:5', 'max:480'],
+            'duration_minutes' => ['sometimes', 'required', 'integer', $this->boolean('is_addon', (bool) $this->route('service')?->is_addon) ? 'min:0' : 'min:5', 'max:480'],
+            'is_addon'         => ['sometimes', 'boolean'],
             'image'            => ['sometimes', 'nullable', 'image', 'max:2048'],
             'is_active'        => ['sometimes', 'boolean'],
             'booking_count'    => ['sometimes', 'integer', 'min:0'],

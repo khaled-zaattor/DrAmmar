@@ -513,10 +513,11 @@ const BlockedSlotsTab = ({ me }) => {
         const checkList = Array.isArray(checkRaw) ? checkRaw : (checkRaw?.data ?? []);
 
         const busyAppts = conflictInfo.appointments.filter((conflictAppt) => {
+          if (Number(conflictAppt.duration_minutes) === 0) return false;
           const cStart = toMinutes((conflictAppt.appointment_time ?? '').slice(0, 5));
           const cEnd   = cStart + (conflictAppt.duration_minutes ?? 0);
           return checkList.some((a) => {
-            if (a.status === 'cancelled') return false;
+            if (a.status === 'cancelled' || a.status === 'no_show' || Number(a.duration_minutes) === 0) return false;
             const aStart = toMinutes((a.appointment_time ?? '').slice(0, 5));
             const aEnd   = aStart + (a.duration_minutes ?? 0);
             return aStart < cEnd && aEnd > cStart;
@@ -561,7 +562,7 @@ const BlockedSlotsTab = ({ me }) => {
       const blockEnd   = toMinutes(form.end_time);
 
       const conflicts = list.filter((a) => {
-        if (a.status === 'cancelled') return false;
+        if (a.status === 'cancelled' || a.status === 'no_show' || Number(a.duration_minutes) === 0) return false;
         const apptStart = toMinutes((a.appointment_time ?? '').slice(0, 5));
         const apptEnd   = apptStart + (a.duration_minutes ?? 0);
         return apptStart < blockEnd && apptEnd > blockStart;

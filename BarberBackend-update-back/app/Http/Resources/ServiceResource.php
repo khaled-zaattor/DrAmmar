@@ -16,6 +16,7 @@ class ServiceResource extends JsonResource
             'description'      => $this->description,
             'price'            => (float) $this->price,
             'duration_minutes' => $this->duration_minutes,
+            'is_addon'         => (bool) $this->is_addon,
             'booking_count'    => (int) ($this->booking_count ?? 0),
             'image_url'        => $this->image
                                     ? Storage::disk('public')->url($this->image)

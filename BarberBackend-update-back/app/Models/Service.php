@@ -18,6 +18,7 @@ class Service extends Model
         'description',
         'price',
         'duration_minutes',
+        'is_addon',
         'image',
         'is_active',
         'booking_count',
@@ -28,6 +29,7 @@ class Service extends Model
         return [
             'price'         => 'decimal:2',
             'is_active'     => 'boolean',
+            'is_addon'      => 'boolean',
             'booking_count' => 'integer',
         ];
     }

@@ -29,6 +29,7 @@ class ReviewRequestMail extends Mailable
     {
         return new Content(
             view: 'emails.review_request',
+            text: 'emails.review_request_text',
             with: [
                 'appointment' => $this->appointment,
             ],
@@ -39,7 +40,7 @@ class ReviewRequestMail extends Mailable
     {
         return new Headers(
             text: [
-                'List-Unsubscribe' => '<mailto:' . config('mail.from.address') . '?subject=Unsubscribe>',
+                'List-Unsubscribe' => '<mailto:' . config('mail.reply_to.address') . '?subject=Unsubscribe>',
             ],
         );
     }

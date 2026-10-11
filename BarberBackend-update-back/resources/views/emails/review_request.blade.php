@@ -24,7 +24,7 @@
         <p>Could you spare a moment to share your experience? It helps us serve you better and helps others find us.</p>
 
         <div class="cta">
-            <a href="{{ env('FRONTEND_URL', 'http://localhost:8080') }}/reviews" class="btn">Leave a Review</a>
+            <a href="{{ config('app.review_url') }}" class="btn">Leave a Review</a>
         </div>
 
         <p>Your appointment details:</p>
@@ -38,6 +38,8 @@
     </div>
     <div class="footer">
         <p>{{ config('app.name') }} &mdash; We appreciate your feedback!</p>
+        <p>4201 62nd North Unit 9, Pinellas Park, FL 33781 &middot; 813-895-9229</p>
+        <p>Don't want these emails? Reply with "unsubscribe" and we'll stop sending them.</p>
     </div>
 </body>
 </html>

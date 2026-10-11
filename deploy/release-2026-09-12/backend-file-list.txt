@@ -1,0 +1,11 @@
+﻿BarberBackend-update-back/app/Http/Controllers/Api/Admin/AppointmentController.php
+BarberBackend-update-back/app/Http/Controllers/Api/Admin/BarberController.php
+BarberBackend-update-back/app/Http/Controllers/Api/AvailabilityController.php
+BarberBackend-update-back/app/Http/Requests/AvailabilityRequest.php
+BarberBackend-update-back/app/Http/Requests/StoreServiceRequest.php
+BarberBackend-update-back/app/Http/Requests/UpdateServiceRequest.php
+BarberBackend-update-back/app/Http/Resources/ServiceResource.php
+BarberBackend-update-back/app/Models/Service.php
+BarberBackend-update-back/app/Services/AppointmentService.php
+BarberBackend-update-back/app/Services/AvailabilityService.php
+BarberBackend-update-back/database/migrations/2026_09_11_000001_add_is_addon_to_services_table.php

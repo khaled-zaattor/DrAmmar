@@ -52,6 +52,10 @@ return [
             'transport' => 'ses',
         ],
 
+        'resend' => [
+            'transport' => 'resend',
+        ],
+
         'postmark' => [
             'transport' => 'postmark',
             // 'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
@@ -98,6 +102,20 @@ return [
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Example'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Global "Reply-To" Address
+    |--------------------------------------------------------------------------
+    |
+    | A monitored inbox that customer replies (and unsubscribe requests) go to.
+    |
+    */
+
+    'reply_to' => [
+        'address' => env('MAIL_REPLY_TO_ADDRESS') ?: env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+        'name' => env('MAIL_REPLY_TO_NAME') ?: env('MAIL_FROM_NAME', 'Example'),
     ],
 
 ];
